@@ -1,0 +1,38 @@
+# -*- coding: utf-8 -*-
+
+"""Metadata parsing."""
+
+import configparser
+import numpy as np
+
+
+def load_hdt(file):
+    """Load metadata from a .htd header file (VTT format)."""
+
+    meta = configparser.ConfigParser()
+    meta.read(file)
+
+    return meta
+
+
+def image_meta(meta, idx):
+    """Parse metadata for a given image (layer) in the FPI data."""
+
+    layer = 'Image{}'.format(idx)
+    im_meta = dict()
+    im_meta['npeaks'] = meta.getint(layer, 'npeaks')
+    im_meta['width'] = meta.getint(layer, 'width')
+    im_meta['height'] = meta.getint(layer, 'height')
+    im_meta['gain'] = meta.getfloat(layer, 'gain')
+    im_meta['bayer pattern'] = meta.getint(layer, 'bayer pattern')
+    im_meta['index'] = meta.getint(layer, 'index')
+    im_meta['wavelengths'] = parsevec(meta.get(layer, 'wavelengths'))
+    im_meta['fwhms'] = parsevec(meta.get(layer, 'fwhms'))
+    im_meta['setpoints'] = parsevec(meta.get(layer, 'setpoints'))
+    im_meta['sinvs'] = parsevec(meta.get(layer, 'sinvs'))
+    return im_meta
+
+
+def parsevec(s):
+    """Parse a vector of floats from a string."""
+    return np.fromstring(s.strip('"'), dtype='float', sep=' ')
