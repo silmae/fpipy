@@ -1,0 +1,6 @@
+--- 
+name: fpipy
+merge_requests_enabled: true
+license: MIT License
+private_repo: false
+deny_force_pushing: true
