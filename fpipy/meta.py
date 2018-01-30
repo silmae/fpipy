@@ -7,7 +7,7 @@ import numpy as np
 
 
 def load_hdt(file):
-    """Load metadata from a .htd header file (VTT format)."""
+    """Load metadata from a .hdt header file (VTT format)."""
 
     meta = configparser.ConfigParser()
     meta.read(file)
