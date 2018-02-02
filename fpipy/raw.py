@@ -23,9 +23,9 @@ def read_cfa(filepath):
     #for item in list(meta['Header']):
     #    cfa.attrs[item]=meta['Header'][item]
     #All attributes would have type 'str' if done in a loop. This is not nice. Has to be done the hard way. :(
-    cfa.attrs['fpi temperature']=meta.getfloat('Header', 'fpi temperature')
-    cfa.attrs['description']=meta.get('Header', 'description')
-    cfa.attrs['dark layer included']=meta.getboolean('Header', 'dark layer included')
-    cfa.attrs['number of layers']=meta.getint('Header', 'number of layers')
+    cfa.attrs['fpi temperature'] = meta.getfloat('Header', 'fpi temperature')
+    cfa.attrs['description'] = meta.get('Header', 'description').strip('"')
+    cfa.attrs['dark layer included'] = meta.getboolean('Header', 'dark layer included')
+    cfa.attrs['number of layers'] = meta.getint('Header', 'number of layers')
 
     return cfa
