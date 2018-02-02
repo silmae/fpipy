@@ -19,4 +19,8 @@ def read_cfa(filepath):
 
 #Parsitaan tähän cfa ja meta yhteen xarrayn tietorakenteeseen ja palautetaan se mielummin
 
-    return cfa, meta
+    cfa.attrs.clear()
+    for item in list(meta['Header']):
+        cfa.attrs[item]=meta['Header'][item]
+
+    return cfa
