@@ -2,10 +2,11 @@
 
 """Reading and interpolating raw CFA data."""
 
+import os
 import xarray as xr
-from . import meta
+from .meta import load_hdt
 
-def read_xarray(filepath):
+def read_cfa(filepath):
     """Read a raw CFA datafile to an xarray DataFrame.
     """
 
@@ -14,6 +15,8 @@ def read_xarray(filepath):
     hdtfile = base + '.hdt'
 
     cfa = xr.open_rasterio(datfile)
-    meta = meta.load_hdt(hdtfile)
+    meta = load_hdt(hdtfile)
+
+#Parsitaan tähän cfa ja meta yhteen xarrayn tietorakenteeseen ja palautetaan se mielummin
 
     return cfa, meta

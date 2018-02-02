@@ -13,7 +13,7 @@ def load_hdt(hdtfile):
         raise(IOError('Header file {} does not exist'.format(hdtfile)))
 
     meta = configparser.ConfigParser()
-    meta.readfp(hdtfile)
+    meta.read(hdtfile)
 
     return meta
 
