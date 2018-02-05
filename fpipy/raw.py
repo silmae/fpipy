@@ -17,15 +17,13 @@ def read_cfa(filepath):
     cfa = xr.open_rasterio(datfile)
     meta = load_hdt(hdtfile)
 
-    #Parsitaan tähän cfa ja meta yhteen xarrayn tietorakenteeseen ja palautetaan se mielummin
-
+    #For the fpi sensor in JYU, the metadata in the ENVI datafile is not relevant, and can be fully replaced by metadata from the .hdt file.
+    cfa.drop('wavelength')
+    cfa.drop('fwhm')
     cfa.attrs.clear()
-    #for item in list(meta['Header']):
-    #    cfa.attrs[item]=meta['Header'][item]
-    #All attributes would have type 'str' if done in a loop. This is not nice. Has to be done the hard way. :(
     cfa.attrs['fpi temperature'] = meta.getfloat('Header', 'fpi temperature')
     cfa.attrs['description'] = meta.get('Header', 'description').strip('"')
     cfa.attrs['dark layer included'] = meta.getboolean('Header', 'dark layer included')
-    cfa.attrs['number of layers'] = meta.getint('Header', 'number of layers')
+    #cfa.attrs['number of layers'] = meta.getint('Header', 'number of layers') #Redundant
 
     return cfa
