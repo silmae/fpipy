@@ -39,3 +39,8 @@ def image_meta(meta, idx):
 def parsevec(s):
     """Parse a vector of floats from a string."""
     return np.fromstring(s.strip('"'), dtype='float', sep=' ')
+
+def parsesinvs(s):
+    """Parse an array of floats from a string."""
+    vector = parsevec(s)
+    return np.array([vector[0:3], vector[3:6], vector[6:]])
