@@ -33,7 +33,7 @@ def image_meta(meta, idx):
     im_meta['wavelengths'] = parsevec(meta.get(layer, 'wavelengths'))
     im_meta['fwhms'] = parsevec(meta.get(layer, 'fwhms'))
     im_meta['setpoints'] = parsevec(meta.get(layer, 'setpoints'))
-    im_meta['sinvs'] = parsevec(meta.get(layer, 'sinvs'))
+    im_meta['sinvs'] = parsesinvs(meta.get(layer, 'sinvs'))
     return im_meta
 
 
