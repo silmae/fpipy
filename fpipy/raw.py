@@ -4,14 +4,15 @@
 
 Example
 -------
-    raw = fpi.read_cfa('/home/jypehama/work/Piirtoheitin/20180122-133111-Valo-0_RAW.dat')
-    raw['cfa'] = raw.cfa.astype('float64') Should this part be inside raw_to_radiance or required from user?
-    radiance = raw_to_radiance(raw)
+    data = fpi.read_cfa('/home/jypehama/work/Piirtoheitin/20180122-133111-Valo-0_RAW.dat')
+    radiance = fpi.raw_to_radiance(raw)
+    radiance.isel(wavelength=80).plot()
     
 """
 
 import os
 import xarray as xr
+import colour_demosaicing as cdm
 from .meta import load_hdt, parsevec, parsesinvs
 
 def read_cfa(filepath):
@@ -40,13 +41,19 @@ def read_cfa(filepath):
 
     cfa = xr.open_rasterio(datfile)
     meta = load_hdt(hdtfile)
+
+    if 'fwhm' in cfa.coords:
+        cfa = cfa.drop('fwhm')
+    if 'wavelength' in cfa.coords:
+        cfa = cfa.drop('wavelength')
+
     layers = cfa.band.values - 1
 
     dataset = xr.Dataset(coords={'peak': [1, 2, 3],
                                  'setpoint': [1, 2, 3],
                                  'rgb': ['R', 'G', 'B']},
 
-                         data_vars={'cfa': cfa.drop('wavelength').drop('fwhm').astype('float64'),
+                         data_vars={'cfa': cfa,
                                     'npeaks': ('band', [meta.getint('Image{}'.format(layer), 'npeaks') for layer in layers]),
                                     'wavelength': (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'wavelengths')) for layer in layers]),
                                     'fwhm': (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'fwhms')) for layer in layers]),
@@ -57,6 +64,46 @@ def read_cfa(filepath):
                                 'description': meta.get('Header', 'description').strip('"'),
                                 'dark_layer_included': meta.getboolean('Header', 'dark layer included'),
                                 'gain': meta.getfloat('Image0', 'gain'),
+                                'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
                                 'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
 
     return dataset
+
+def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
+    layers = substract_dark(dataset.cfa)
+    pattern = {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
+    radiance = []
+    for layer in layers:
+        demo = cdm.demosaicing_CFA_Bayer_bilinear(layer, pattern=pattern[dataset.bayer_pattern])
+        for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
+            sinvs = dataset.sinvs.sel(band=layer.band, peak=n).values
+            radlayer = xr.DataArray(sinvs[0] * demo[:,:,0] + sinvs[1] * demo[:,:,1] + sinvs[2] * demo[:,:,2],
+                                    coords={'y': layer.y,
+                                            'x': layer.x,
+                                            'wavelength': dataset.wavelength.sel(band=layer.band, peak=n),
+                                            'fwhm': dataset.fwhm.sel(band=layer.band, peak=n)},
+                                    dims=['y','x'])
+            radiance = radiance + [radlayer]
+    return xr.concat(radiance, dim='wavelength', coords=['wavelength','fwhm']).sortby('wavelength')
+    
+def substract_dark(array, dark=None):
+    """Substracts dark reference from other image layers.
+
+    Parameters
+    ----------
+    array : xarray.DataArray
+
+    dark : xarray.DataArray
+        This is typically included as the first layer of array, but can be overridden
+
+    Returns
+    -------
+    refarray : xarray.DataArray
+        Array of layers from which the dark reference layer has been substracted.
+        Resulting array will have dtype float64.
+    """
+
+    if dark is None:
+        return array[1:].astype('float64') - array[0]
+    else:
+        return array[:].astype('float64') - dark

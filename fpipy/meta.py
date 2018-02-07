@@ -27,6 +27,7 @@ def image_meta(meta, idx):
     im_meta['width'] = meta.getint(layer, 'width')
     im_meta['height'] = meta.getint(layer, 'height')
     im_meta['gain'] = meta.getfloat(layer, 'gain')
+    im_meta['exposure time'] = meta.getfloat(layer, 'exposure time (ms)')
     im_meta['bayer pattern'] = meta.getint(layer, 'bayer pattern')
     im_meta['index'] = meta.getint(layer, 'index')
     im_meta['wavelengths'] = parsevec(meta.get(layer, 'wavelengths'))
