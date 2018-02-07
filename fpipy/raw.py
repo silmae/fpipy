@@ -82,9 +82,12 @@ def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
                                             'x': layer.x,
                                             'wavelength': dataset.wavelength.sel(band=layer.band, peak=n),
                                             'fwhm': dataset.fwhm.sel(band=layer.band, peak=n)},
-                                    dims=['y','x'])
-            radiance = radiance + [radlayer]
-    return xr.concat(radiance, dim='wavelength', coords=['wavelength','fwhm']).sortby('wavelength')
+                                    dims=['y', 'x'])
+            radlayer = radlayer/dataset.exposure
+            radiance.append(radlayer)
+    radiance = xr.concat(radiance, dim='wavelength', coords=['wavelength','fwhm']).sortby('wavelength')
+    radiance.attrs = {key: value for key, value in dataset.attrs.items() if key not in ['dark_layer_included', 'bayer_pattern']}
+    return radiance
     
 def substract_dark(array, dark=None):
     """Substracts dark reference from other image layers.
