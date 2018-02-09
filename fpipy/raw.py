@@ -4,10 +4,9 @@
 
 Example
 -------
-    data = fpi.read_cfa('/home/jypehama/work/Piirtoheitin/20180122-133111-Valo-0_RAW.dat')
-    radiance = fpi.raw_to_radiance(raw)
-    radiance.isel(wavelength=80).plot()
-    
+    data = fpi.read_cfa('cameraoutput.dat')
+    radiance = fpi.raw_to_radiance(data)
+    radiance.sel(wavelength=800, method='nearest').plot()
 """
 
 import os
@@ -15,19 +14,21 @@ import xarray as xr
 import colour_demosaicing as cdm
 from .meta import load_hdt, parsevec, parsesinvs
 
+
 def read_cfa(filepath):
     """Read a raw CFA datafile and metadata to an xarray Dataset.
 
-
-    For the fpi sensor in JYU, the metadata in the ENVI datafile is not relevant but is preserved as dataset.cfa.attrs just in case.
-    Wavelength and fwhm data will be replaced with information from metadata and number of layers etc. are omitted as redundant.
+    For the fpi sensor in JYU, the metadata in the ENVI datafile is not
+    relevant but is preserved as dataset.cfa.attrs just in case.
+    Wavelength and fwhm data will be replaced with information from metadata
+    and number of layers etc. are omitted as redundant.
     Gain and bayer pattern are assumed to be constant within each file.
 
     Parameters
     ----------
     filepath : str
         Path to the datafile to be opened, either with or without extension.
-        Expects data to have extension .dat and metatadata to have extension .hdt.
+        Expects data and metadata to have extensions .dat and .hdt.
 
     Returns
     -------
@@ -48,47 +49,100 @@ def read_cfa(filepath):
         cfa = cfa.drop('wavelength')
 
     layers = cfa.band.values - 1
+    npeaks = ('band', [meta.getint('Image{}'.format(layer), 'npeaks') for layer in layers])
+    wavelength = (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'wavelengths')) for layer in layers])
+    fwhm = (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'fwhms')) for layer in layers])
+    setpoints = (['band', 'setpoint'], [parsevec(meta.get('Image{}'.format(layer), 'setpoints')) for layer in layers])
+    sinvs = (['band', 'peak', 'rgb'], [parsesinvs(meta.get('Image{}'.format(layer), 'sinvs')) for layer in layers])
 
-    dataset = xr.Dataset(coords={'peak': [1, 2, 3],
-                                 'setpoint': [1, 2, 3],
-                                 'rgb': ['R', 'G', 'B']},
+    dataset = xr.Dataset(
+        coords={'peak': [1, 2, 3],
+                'setpoint': [1, 2, 3],
+                'rgb': ['R', 'G', 'B']},
 
-                         data_vars={'cfa': cfa,
-                                    'npeaks': ('band', [meta.getint('Image{}'.format(layer), 'npeaks') for layer in layers]),
-                                    'wavelength': (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'wavelengths')) for layer in layers]),
-                                    'fwhm': (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'fwhms')) for layer in layers]),
-                                    'setpoints': (['band', 'setpoint'], [parsevec(meta.get('Image{}'.format(layer), 'setpoints')) for layer in layers]),
-                                    'sinvs': (['band', 'peak', 'rgb'], [parsesinvs(meta.get('Image{}'.format(layer), 'sinvs')) for layer in layers])},
+        data_vars={'cfa': cfa,
+                   'npeaks': npeaks,
+                   'wavelength': wavelength,
+                   'fwhm': fwhm,
+                   'setpoints': setpoints,
+                   'sinvs': sinvs},
 
-                         attrs={'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
-                                'description': meta.get('Header', 'description').strip('"'),
-                                'dark_layer_included': meta.getboolean('Header', 'dark layer included'),
-                                'gain': meta.getfloat('Image0', 'gain'),
-                                'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
-                                'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
+        attrs={'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
+               'description': meta.get('Header', 'description').strip('"'),
+               'dark_layer_included':
+                   meta.getboolean('Header', 'dark layer included'),
+               'gain': meta.getfloat('Image0', 'gain'),
+               'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
+               'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
 
     return dataset
 
+
 def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
-    layers = substract_dark(dataset.cfa)
-    pattern = {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
+    """Performs demosaicing and computes radiance from RGB values.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Requires data to be found via dataset.cfa, dataset.npeaks,
+        dataset.sinvs, dataset.wavelength, dataset.fwhm and dataset.exposure.
+
+    pattern : int, str or {int: str}
+        Default mapping is {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
+
+    demosaic : str
+        Default is bilinear. Should match a demosaicing_CFA_Bayer_{string}().
+
+    Returns
+    -------
+    radiance : xarray.DataArray
+        Includes computed radiance sorted by wavelength
+        and with x, y, wavelength and fwhm as coordinates.
+        Passes along relevant attributes from input dataset.
+    """
+
+    if dataset.dark_layer_included:
+        layers = substract_dark(dataset.cfa)
+    else:
+        raise UserWarning('Dark layer is not included in dataset!')
+
+    pattern = bayerpattern(dataset, pattern)
+
     radiance = []
     for layer in layers:
-        demo = cdm.demosaicing_CFA_Bayer_bilinear(layer, pattern=pattern[dataset.bayer_pattern])
+        # eval() may be slightly ugly, but does what is needed here.
+        demo = eval('cdm.demosaicing_CFA_Bayer_'+demosaic+'(layer, pattern)')
+
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
             sinvs = dataset.sinvs.sel(band=layer.band, peak=n).values
-            radlayer = xr.DataArray(sinvs[0] * demo[:,:,0] + sinvs[1] * demo[:,:,1] + sinvs[2] * demo[:,:,2],
-                                    coords={'y': layer.y,
-                                            'x': layer.x,
-                                            'wavelength': dataset.wavelength.sel(band=layer.band, peak=n),
-                                            'fwhm': dataset.fwhm.sel(band=layer.band, peak=n)},
-                                    dims=['y', 'x'])
+            # Equals sinvs.sel(band=layer.band, peak=n, rgb='R') * demo[:,:,0]
+            rad = sinvs[0] * demo[:, :, 0]
+                + sinvs[1] * demo[:, :, 1]
+                + sinvs[2] * demo[:, :, 2]
+            wavelength = dataset.wavelength.sel(band=layer.band, peak=n)
+            fwhm = dataset.fwhm.sel(band=layer.band, peak=n)
+
+            radlayer = xr.DataArray(
+                rad,
+                coords={'y': layer.y,
+                        'x': layer.x,
+                        'wavelength': wavelength,
+                        'fwhm': fwhm},
+                dims=['y', 'x'])
+            # This might not be correct for all sensors!
             radlayer = radlayer/dataset.exposure
             radiance.append(radlayer)
-    radiance = xr.concat(radiance, dim='wavelength', coords=['wavelength','fwhm']).sortby('wavelength')
-    radiance.attrs = {key: value for key, value in dataset.attrs.items() if key not in ['dark_layer_included', 'bayer_pattern']}
+
+    radiance = xr.concat(radiance,
+                         dim='wavelength',
+                         coords=['wavelength', 'fwhm']
+                         ).sortby('wavelength')
+    radiance.attrs = {key: value for key, value in dataset.attrs.items()
+                      if key not in ['dark_layer_included', 'bayer_pattern']}
+
     return radiance
-    
+
+
 def substract_dark(array, dark=None):
     """Substracts dark reference from other image layers.
 
@@ -96,13 +150,13 @@ def substract_dark(array, dark=None):
     ----------
     array : xarray.DataArray
 
-    dark : xarray.DataArray
-        This is typically included as the first layer of array, but can be overridden
+    dark : xarray.DataArray, optional
+        This is typically included as the first layer of array.
 
     Returns
     -------
     refarray : xarray.DataArray
-        Array of layers from which the dark reference layer has been substracted.
+        Layers from which the dark reference layer has been substracted.
         Resulting array will have dtype float64.
     """
 
@@ -110,3 +164,33 @@ def substract_dark(array, dark=None):
         return array[1:].astype('float64') - array[0]
     else:
         return array[:].astype('float64') - dark
+
+
+def bayerpattern(dataset, pattern=None):
+    """Matches input to a string describing a Bayer pattern.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+
+    pattern : int, str or {int: str}
+
+    Returns
+    -------
+    pattern : str
+        See documentation of colour_demosaicing for valid strings.
+    """
+
+    case = {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
+
+    if pattern is None:
+        return case[dataset.bayer_pattern]
+
+    if type(pattern) is str:
+        return pattern
+
+    if type(pattern) is int:
+        return case[pattern]
+
+    else:
+        raise TypeError('Pattern should be either None or an int or string.')
