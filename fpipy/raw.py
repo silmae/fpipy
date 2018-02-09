@@ -12,6 +12,7 @@ Loading, converting and plotting data can be done as follows::
 """
 
 import os
+from enum import IntEnum
 import xarray as xr
 import colour_demosaicing as cdm
 from .meta import load_hdt, metalist
@@ -165,6 +166,17 @@ def substract_dark(array, dark=None):
         return array[1:].astype('float64') - array[0]
     else:
         return array[:].astype('float64') - dark
+
+
+class BayerPattern(IntEnum):
+    """Enumeration of the Bayer Patterns as used by FPI headers."""
+    GBRG = 0
+    GRBG = 1
+    BGGR = 2
+    RGGB = 3
+
+    def __str__(self):
+        return self.name
 
 
 def bayerpattern(dataset, pattern=None):
