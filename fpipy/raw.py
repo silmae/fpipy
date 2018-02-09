@@ -192,33 +192,3 @@ class BayerPattern(IntEnum):
 
     def __str__(self):
         return self.name
-
-
-def bayerpattern(dataset, pattern=None):
-    """Matches input to a string describing a Bayer pattern.
-
-    Parameters
-    ----------
-    dataset : xr.Dataset
-
-    pattern : int, str or {int: str}
-
-    Returns
-    -------
-    pattern : str
-        See documentation of colour_demosaicing for valid strings.
-    """
-
-    case = {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
-
-    if pattern is None:
-        return case[dataset.bayer_pattern]
-
-    if type(pattern) is str:
-        return pattern
-
-    if type(pattern) is int:
-        return case[pattern]
-
-    else:
-        raise TypeError('Pattern should be either None or an int or string.')
