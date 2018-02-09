@@ -12,9 +12,10 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'configparser',
     'numpy',
+    'xarray',
     'rasterio',
+    'colour_demosaicing',
 ]
 
 setup_requirements = [
