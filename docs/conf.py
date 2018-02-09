@@ -59,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'FPIpy'
-copyright = u"2018, Matti A. Eskelinen"
+copyright = u"2018, the FPIpy developers"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
