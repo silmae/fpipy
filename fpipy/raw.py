@@ -125,7 +125,8 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
         }
 
     dm_alg = dm_methods[dm_method]
-    radiance = []
+    radiance = {}
+
     for layer in layers:
 
         demo = dm_alg(layer, pattern_name)
@@ -148,12 +149,12 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
                 dims=['y', 'x'])
             # This might not be correct for all sensors!
             radlayer = radlayer/dataset.exposure
-            radiance.append(radlayer)
+            radiance[float(wavelength)] = radlayer
 
-    radiance = xr.concat(radiance,
+    radiance = xr.concat([radiance[key] for key in sorted(radiance)],
                          dim='wavelength',
-                         coords=['wavelength', 'fwhm']
-                         ).sortby('wavelength')
+                         coords=['wavelength', 'fwhm'])
+
     radiance.attrs = {key: value for key, value in dataset.attrs.items()
                       if key not in ['dark_layer_included', 'bayer_pattern']}
 
