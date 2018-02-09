@@ -58,7 +58,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Fabry-Perot Imaging in Python'
+project = u'FPIpy'
 copyright = u"2018, Matti A. Eskelinen"
 
 # The version info for the project you're documenting, acts as replacement

@@ -1,5 +1,5 @@
-Welcome to Fabry-Perot Imaging in Python's documentation!
-======================================
+Welcome to the FPIpy documentation!
+===================================
 
 Contents:
 
