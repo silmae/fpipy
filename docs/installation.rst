@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/maaleske/fpipy
+    $ git clone git://github.com/silmae/fpipy
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/maaleske/fpipy/tarball/master
+    $ curl  -OL https://github.com/silmae/fpipy/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/maaleske/fpipy
-.. _tarball: https://github.com/maaleske/fpipy/tarball/master
+.. _Github repo: https://github.com/silmae/fpipy
+.. _tarball: https://github.com/silmae/fpipy/tarball/master

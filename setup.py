@@ -35,7 +35,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Matti A. Eskelinen",
     author_email='matti.a.eskelinen@student.jyu.fi',
-    url='https://github.com/maaleske/fpipy',
+    url='https://github.com/silmae/fpipy',
     packages=find_packages(include=['fpipy']),
     include_package_data=True,
     install_requires=requirements,
