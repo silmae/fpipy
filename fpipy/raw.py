@@ -80,7 +80,7 @@ def read_cfa(filepath):
     return dataset
 
 
-def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
+def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -89,11 +89,15 @@ def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
         Requires data to be found via dataset.cfa, dataset.npeaks,
         dataset.sinvs, dataset.wavelength, dataset.fwhm and dataset.exposure.
 
-    pattern : int, str or {int: str}
-        Default mapping is {0: 'GBRG', 1: 'GRBG', 2: 'BGGR', 3: 'RGGB'}
+    pattern : BayerPattern, optional
+        Bayer pattern used to demosaic the CFA.
+        Can be supplied to override the file metadata value in cases where it
+        is missing or incorrect.
 
-    demosaic : str
-        Default is bilinear. Should match a demosaicing_CFA_Bayer_{string}().
+    dm_method : str, optional
+        **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
+        Demosaicing method. Default is bilinear. See the `colour_demosaicing`
+        package for more info on the different methods.
 
     Returns
     -------
@@ -108,12 +112,23 @@ def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
     else:
         raise UserWarning('Dark layer is not included in dataset!')
 
-    pattern = bayerpattern(dataset, pattern)
+    if pattern is None:
+        pattern = dataset.bayer_pattern
 
+    pattern_name = BayerPattern(pattern).name
+
+    dm_methods = {
+        'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
+        'DDFAPD': cdm.demosaicing_CFA_Bayer_DDFAPD,
+        'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
+        'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
+        }
+
+    dm_alg = dm_methods[dm_method]
     radiance = []
     for layer in layers:
-        # eval() may be slightly ugly, but does what is needed here.
-        demo = eval('cdm.demosaicing_CFA_Bayer_'+demosaic+'(layer, pattern)')
+
+        demo = dm_alg(layer, pattern_name)
 
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
             sinvs = dataset.sinvs.sel(band=layer.band, peak=n).values
