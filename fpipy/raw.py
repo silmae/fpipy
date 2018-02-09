@@ -12,7 +12,7 @@ Example
 import os
 import xarray as xr
 import colour_demosaicing as cdm
-from .meta import load_hdt, parsevec, parsesinvs
+from .meta import load_hdt, metalist
 
 
 def read_cfa(filepath):
@@ -48,12 +48,11 @@ def read_cfa(filepath):
     if 'wavelength' in cfa.coords:
         cfa = cfa.drop('wavelength')
 
-    layers = cfa.band.values - 1
-    npeaks = ('band', [meta.getint('Image{}'.format(layer), 'npeaks') for layer in layers])
-    wavelength = (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'wavelengths')) for layer in layers])
-    fwhm = (['band', 'peak'], [parsevec(meta.get('Image{}'.format(layer), 'fwhms')) for layer in layers])
-    setpoints = (['band', 'setpoint'], [parsevec(meta.get('Image{}'.format(layer), 'setpoints')) for layer in layers])
-    sinvs = (['band', 'peak', 'rgb'], [parsesinvs(meta.get('Image{}'.format(layer), 'sinvs')) for layer in layers])
+    npeaks = ('band', metalist(meta, 'npeaks'))
+    wavelength = (['band', 'peak'], metalist(meta, 'wavelengths'))
+    fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
+    setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
+    sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
 
     dataset = xr.Dataset(
         coords={'peak': [1, 2, 3],
@@ -116,9 +115,9 @@ def raw_to_radiance(dataset, pattern=None, demosaic='bilinear'):
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
             sinvs = dataset.sinvs.sel(band=layer.band, peak=n).values
             # Equals sinvs.sel(band=layer.band, peak=n, rgb='R') * demo[:,:,0]
-            rad = sinvs[0] * demo[:, :, 0]
-                + sinvs[1] * demo[:, :, 1]
-                + sinvs[2] * demo[:, :, 2]
+            rad = (sinvs[0] * demo[:, :, 0]
+                   + sinvs[1] * demo[:, :, 1]
+                   + sinvs[2] * demo[:, :, 2])
             wavelength = dataset.wavelength.sel(band=layer.band, peak=n)
             fwhm = dataset.fwhm.sel(band=layer.band, peak=n)
 

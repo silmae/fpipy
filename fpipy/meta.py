@@ -6,6 +6,7 @@ import configparser
 import numpy as np
 import os
 
+
 def load_hdt(hdtfile):
     """Load metadata from a .hdt header file (VTT format)."""
 
@@ -37,11 +38,21 @@ def image_meta(meta, idx):
     return im_meta
 
 
+def metalist(meta, quantity):
+    """Creates a list from a metadata quantity across images."""
+
+    return [image_meta(meta, layer)[quantity]
+            for layer in range(0, int(meta['Header']['number of layers']))]
+
+
 def parsevec(s):
     """Parse a vector of floats from a string."""
+
     return np.fromstring(s.strip('"'), dtype='float', sep=' ')
+
 
 def parsesinvs(s):
     """Parse an array of floats from a string."""
+
     vector = parsevec(s)
     return np.array([vector[0:3], vector[3:6], vector[6:]])
