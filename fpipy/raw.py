@@ -56,7 +56,7 @@ def read_cfa(filepath):
     fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
     setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
     sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
-[np.sum(np.abs(radifile[i] - radimuunnos[i])) for i in range(0
+
     dataset = xr.Dataset(
         coords={'peak': [1, 2, 3],
                 'setpoint': [1, 2, 3],
