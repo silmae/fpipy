@@ -30,7 +30,7 @@ def sample_preprocessed_radiance():
 
 @pytest.fixture
 def sample_bilinear_radiance():
-    sample_bilinear_radiance = fpi.raw_to_radiance(sample_raw())
+    sample_bilinear_radiance = fpi.raw_to_radiance(sample_raw(), dm_method='bilinear')
     return sample_bilinear_radiance
 
 def test_matches_bilinear_preprocessed_file(sample_preprocessed_radiance,
