@@ -9,6 +9,7 @@ Loading, converting and plotting data can be done as follows::
     data = fpi.read_cfa('cameraoutput.dat')
     radiance = fpi.raw_to_radiance(data)
     radiance.sel(wavelength=800, method='nearest').plot()
+    radiance.to_netcdf('radiance.nc')
 """
 
 import os
