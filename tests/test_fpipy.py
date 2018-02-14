@@ -12,7 +12,7 @@ import numpy as np
 
 @pytest.fixture
 def sample_raw():
-    sample_raw = fpi.read_cfa('WhiteRef_RAW.dat')
+    sample_raw = fpi.read_cfa('../data/house_crop_4b_RAW.dat')
     return sample_raw
 
 
@@ -21,11 +21,11 @@ def test_raw_envi_file_loading(sample_raw):
 
 
 def test_substract_dark_rollover(sample_raw):
-    assert np.any(fpi.raw.substract_dark(sample_raw.cfa) <= 1.0)
+    assert np.all(fpi.raw.substract_dark(sample_raw.cfa) <= sample_raw.cfa)
 
 @pytest.fixture
 def sample_preprocessed_radiance():
-    sample_preprocessed_radiance = xr.open_rasterio('WhiteRef_RAD.dat')
+    sample_preprocessed_radiance = xr.open_rasterio('../data/house_crop_4b_RAD.dat')
     return sample_preprocessed_radiance
 
 @pytest.fixture
