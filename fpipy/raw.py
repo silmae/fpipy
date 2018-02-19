@@ -20,6 +20,7 @@ from enum import IntEnum
 import xarray as xr
 import colour_demosaicing as cdm
 from .meta import load_hdt, metalist
+from .uglybilinear import demosaicing_CFA_Bayer_uglybilinear
 
 
 def read_cfa(filepath):
@@ -112,9 +113,10 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     """
 
     if dataset.dark_layer_included:
-        layers = substract_dark(dataset.cfa)
+        layers = substract_dark(dataset.cfa.astype('int16'))
     else:
         raise UserWarning('Dark layer is not included in dataset!')
+        layers = dataset.cfa
 
     if pattern is None:
         pattern = dataset.bayer_pattern
@@ -125,6 +127,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
         'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
         'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
+        'uglybilinear': demosaicing_CFA_Bayer_uglybilinear,
         }
 
     dm_alg = dm_methods[dm_method]
@@ -182,9 +185,12 @@ def substract_dark(array, dark=None):
     """
 
     if dark is None:
-        return array[1:].astype('float64') - array[0]
+        output = array[1:] - array[0]
     else:
-        return array[:].astype('float64') - dark
+        output = array[:] - dark
+
+    output.values[output.values < 0] = 0
+    return output
 
 
 class BayerPattern(IntEnum):
