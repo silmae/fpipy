@@ -1,0 +1,14 @@
+ENVI
+description = {/n/archive/IT/hsi-data/maisemat/house_RAD.hdr}
+samples = 400
+lines = 400
+bands = 4
+header offset = 0
+file type = ENVI Standard
+data type = 5
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+wavelength units = nm
+wavelength = {481.320000, 568.270000, 697.250000, 840.000000,}
+fwhm = {13.460000, 16.470000, 14.880000, 11.790000,}

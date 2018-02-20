@@ -1,0 +1,14 @@
+ENVI
+description = {crop of three bands (4 wls) of raw house dataset}
+samples = 400
+lines = 400
+bands = 4
+header offset = 0
+file type = ENVI Standard
+data type = 12
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+wavelength units = SP1
+wavelength = {0.000000, 0.556162, 0.589708, 0.625901,}
+fwhm = {0.000000, 0.000000, 0.000000, 0.000000,}

@@ -1,0 +1,65 @@
+[Header]
+FPI Temperature = 0.000
+Dark Layer included = TRUE
+Number of Layers = 4
+Description = "house_crop_4b_RAW"
+
+[Image0]
+Exposure time (ms) = 99.9843
+Gain = 1.9998
+Height = 1200
+Width = 1920
+Npeaks = 1
+Bayer Pattern = 3
+Index = 0
+Setpoints = "0.000000 0.000000 0.000000"
+Wavelengths = "568.270 0.000 0.000"
+FWHMs = "16.470 0.000 0.000"
+Sinvs = "2.068088000E-5 0.000232879 1.479612000E-6 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000"
+LED currents = ""
+LED indices = ""
+
+[Image1]
+Exposure time (ms) = 99.9843
+Gain = 1.9998
+Height = 1200
+Width = 1920
+Npeaks = 1
+Bayer Pattern = 3
+Index = 0
+Setpoints = "0.556162 0.559548 0.566401"
+Wavelengths = "568.270 0.000 0.000"
+FWHMs = "16.470 0.000 0.000"
+Sinvs = "2.068088000E-5 0.000232879 1.479612000E-6 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000"
+LED currents = ""
+LED indices = ""
+
+[Image2]
+Exposure time (ms) = 99.9843
+Gain = 1.9998
+Height = 1200
+Width = 1920
+Npeaks = 2
+Bayer Pattern = 3
+Index = 38
+Setpoints = "0.589708 0.592945 0.599601"
+Wavelengths = "481.320 697.250 0.000"
+FWHMs = "13.460 14.880 0.000"
+Sinvs = "-4.591261000E-5 4.147327000E-5 0.000148463 0.000380184 9.706848000E-5 -4.197626000E-5 0.000000000 0.000000000 0.000000000"
+LED currents = ""
+LED indices = ""
+
+[Image3]
+Exposure time (ms) = 99.9843
+Gain = 1.9998
+Height = 1200
+Width = 1920
+Npeaks = 1
+Bayer Pattern = 3
+Index = 79
+Setpoints = "0.625901 0.629050 0.635556"
+Wavelengths = "840.000 0.000 0.000"
+FWHMs = "11.790 0.000 0.000"
+Sinvs = "0.001989220 -0.000551359 2.002978000E-5 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000 0.000000000"
+LED currents = ""
+LED indices = ""
