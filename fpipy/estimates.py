@@ -44,7 +44,7 @@ def interp_err_lv_bilin(CFA, pattern):
     K_err = np.asarray(
             [[1,  0, 1],
              [0, -4, 0],
-             [1,  0, 1]]) / 2
+             [1,  0, 1]]) / 8
 
     G = convolve(CFA * G_m, K_err)
 
