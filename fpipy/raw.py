@@ -113,7 +113,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     """
 
     if dataset.dark_layer_included:
-        layers = substract_dark(dataset.cfa.astype('int16'))
+        layers = subtract_dark(dataset.cfa.astype('int16'))
     else:
         raise UserWarning('Dark layer is not included in dataset!')
         layers = dataset.cfa
@@ -148,7 +148,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     return radiance
 
 
-def substract_dark(array, dark=None):
+def subtract_dark(array, dark=None):
     """Substracts dark reference from other image layers.
 
     Parameters
