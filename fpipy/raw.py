@@ -94,7 +94,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
         Requires data to be found via dataset.cfa, dataset.npeaks,
         dataset.sinvs, dataset.wavelength, dataset.fwhm and dataset.exposure.
 
-    pattern : BayerPattern, optional
+    pattern : BayerPattern or str, optional
         Bayer pattern used to demosaic the CFA.
         Can be supplied to override the file metadata value in cases where it
         is missing or incorrect.
@@ -121,7 +121,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     if pattern is None:
         pattern = dataset.bayer_pattern
 
-    pattern_name = BayerPattern(pattern).name
+    pattern_name = BayerPattern.get(pattern).name
 
     radiance = {}
 
