@@ -123,44 +123,25 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
     pattern_name = BayerPattern(pattern).name
 
-    dm_methods = {
-        'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
-        'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
-        'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
-        'uglybilinear': demosaicing_CFA_Bayer_uglybilinear,
-        }
-
-    dm_alg = dm_methods[dm_method]
     radiance = {}
 
     for layer in layers:
-
-        demo = dm_alg(layer, pattern_name)
-
+        demo = demosaic(layer, pattern_name, dm_method)
+        
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
-            sinvs = dataset.sinvs.sel(band=layer.band, peak=n).values
-            # Equals sinvs.sel(band=layer.band, peak=n, rgb='R') * demo[:,:,0]
-            rad = (sinvs[0] * demo[:, :, 0]
-                   + sinvs[1] * demo[:, :, 1]
-                   + sinvs[2] * demo[:, :, 2])
-            wavelength = dataset.wavelength.sel(band=layer.band, peak=n)
-            fwhm = dataset.fwhm.sel(band=layer.band, peak=n)
+            data = dataset.sel(band=layer.band, peak=n)
+       
+            rad = data.sinvs.dot(demo)/data.exposure
 
-            radlayer = xr.DataArray(
-                rad,
-                coords={'y': layer.y,
-                        'x': layer.x,
-                        'wavelength': wavelength,
-                        'fwhm': fwhm},
-                dims=['y', 'x'])
-            # This might not be correct for all sensors!
-            radlayer = radlayer/dataset.exposure
-            radiance[float(wavelength)] = radlayer
+            rad.coords['wavelength']=data.wavelength
+            rad.coords['fwhm']=data.fwhm
+            rad = rad.drop('peak')
+            rad = rad.drop('band')
+            radiance[float(rad.wavelength)] = rad
 
     radiance = xr.concat([radiance[key] for key in sorted(radiance)],
                          dim='wavelength',
                          coords=['wavelength', 'fwhm'])
-
     radiance.attrs = {key: value for key, value in dataset.attrs.items()
                       if key not in ['dark_layer_included', 'bayer_pattern']}
 
@@ -202,3 +183,33 @@ class BayerPattern(IntEnum):
 
     def __str__(self):
         return self.name
+
+
+def demosaic(cfa, pattern_name, dm_method):
+    """Perform demosaicing on a DataArray.
+
+    Parameters
+    ----------
+    cfa : xarray.DataArray
+
+    pattern_name : str
+
+    dm_method : str
+
+    Returns
+    -------
+    xarray.DataArray
+    """
+    dm_methods = {
+        'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
+        'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
+        'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
+        'uglybilinear': demosaicing_CFA_Bayer_uglybilinear,
+        }
+    dm_alg = dm_methods[dm_method]
+    
+    return xr.DataArray(
+    dm_alg(cfa, pattern_name),
+    dims=['y', 'x', 'rgb'],
+    coords={'y': cfa.y, 'x': cfa.x, 'rgb': ['R', 'G', 'B']},
+    attrs=cfa.attrs)
