@@ -184,6 +184,12 @@ class BayerPattern(IntEnum):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get(self, pattern):
+        try:
+            return self[pattern.upper()]
+        except (KeyError, AttributeError):
+            return self(pattern)
 
 def demosaic(cfa, pattern_name, dm_method):
     """Perform demosaicing on a DataArray.
