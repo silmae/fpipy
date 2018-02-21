@@ -127,14 +127,14 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
     for layer in layers:
         demo = demosaic(layer, pattern_name, dm_method)
-        
+
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
             data = dataset.sel(band=layer.band, peak=n)
-       
+
             rad = data.sinvs.dot(demo)/data.exposure
 
-            rad.coords['wavelength']=data.wavelength
-            rad.coords['fwhm']=data.fwhm
+            rad.coords['wavelength'] = data.wavelength
+            rad.coords['fwhm'] = data.fwhm
             rad = rad.drop('peak')
             rad = rad.drop('band')
             radiance[float(rad.wavelength)] = rad
@@ -191,6 +191,7 @@ class BayerPattern(IntEnum):
         except (KeyError, AttributeError):
             return self(pattern)
 
+
 def demosaic(cfa, pattern_name, dm_method):
     """Perform demosaicing on a DataArray.
 
@@ -213,9 +214,9 @@ def demosaic(cfa, pattern_name, dm_method):
         'uglybilinear': demosaicing_CFA_Bayer_uglybilinear,
         }
     dm_alg = dm_methods[dm_method]
-    
+
     return xr.DataArray(
-    dm_alg(cfa, pattern_name),
-    dims=['y', 'x', 'rgb'],
-    coords={'y': cfa.y, 'x': cfa.x, 'rgb': ['R', 'G', 'B']},
-    attrs=cfa.attrs)
+        dm_alg(cfa, pattern_name),
+        dims=['y', 'x', 'rgb'],
+        coords={'y': cfa.y, 'x': cfa.x, 'rgb': ['R', 'G', 'B']},
+        attrs=cfa.attrs)
