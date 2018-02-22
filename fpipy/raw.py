@@ -192,14 +192,17 @@ class BayerPattern(IntEnum):
             return self(pattern)
 
 
-def demosaic(cfa, pattern_name, dm_method):
+def demosaic(cfa, pattern, dm_method):
     """Perform demosaicing on a DataArray.
 
     Parameters
     ----------
     cfa : xarray.DataArray
 
-    pattern_name : str
+    pattern : BayerPattern or str, optional
+        Bayer pattern used to demosaic the CFA.
+        Can be supplied to override the file metadata value in cases where it
+        is missing or incorrect.
 
     dm_method : str
 
@@ -207,6 +210,8 @@ def demosaic(cfa, pattern_name, dm_method):
     -------
     xarray.DataArray
     """
+    pattern_name = BayerPattern.get(pattern).name
+
     dm_methods = {
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
         'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
