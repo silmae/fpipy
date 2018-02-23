@@ -121,12 +121,10 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     if pattern is None:
         pattern = dataset.bayer_pattern
 
-    pattern_name = BayerPattern.get(pattern).name
-
     radiance = {}
 
     for layer in layers:
-        demo = demosaic(layer, pattern_name, dm_method)
+        demo = demosaic(layer, pattern, dm_method)
 
         for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
             data = dataset.sel(band=layer.band, peak=n)
