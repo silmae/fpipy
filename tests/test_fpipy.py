@@ -23,20 +23,3 @@ def test_raw_envi_file_loading(raw):
 
 def test_subtract_dark_rollover(raw):
     assert np.all(fpi.raw.subtract_dark(raw.cfa) <= raw.cfa)
-
-
-@pytest.fixture
-def VTT_radiance():
-    VTT_radiance = xr.open_rasterio('data/house_crop_4b_RAD.dat')
-    return VTT_radiance
-
-
-@pytest.fixture
-def bilinear_radiance(raw):
-    bilinear_radiance = fpi.raw_to_radiance(raw, dm_method='uglybilinear')
-    return bilinear_radiance
-
-
-def test_matches_bilinear_VTT_file(VTT_radiance, bilinear_radiance):
-    assert np.allclose(VTT_radiance.values, bilinear_radiance.values,
-                       rtol=1e-18, atol=4e-4)

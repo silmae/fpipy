@@ -20,7 +20,6 @@ from enum import IntEnum
 import xarray as xr
 import colour_demosaicing as cdm
 from .meta import load_hdt, metalist
-from .uglybilinear import demosaicing_CFA_Bayer_uglybilinear
 
 
 def read_cfa(filepath):
@@ -214,7 +213,6 @@ def demosaic(cfa, pattern, dm_method):
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
         'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
         'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
-        'uglybilinear': demosaicing_CFA_Bayer_uglybilinear,
         }
     dm_alg = dm_methods[dm_method]
 
