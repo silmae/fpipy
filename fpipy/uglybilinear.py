@@ -6,9 +6,10 @@ Bilinear Bayer CFA Demosaicing
 This code has been roughly derived from colour_demosaicing for the purpose of
 matching the methods that our camera's own demosaicing code uses.
 
+
 References
 ----------
--   :cite:`Losson2010c` : Losson, O., Macaire, L., & Yang, Y. (2010).
+.. [Losson2010c] Losson, O., Macaire, L., & Yang, Y. (2010)
     Comparison of Color Demosaicing Methods. In Advances in Imaging and
     Electron Physics (Vol. 162, pp. 173-265). doi:10.1016/S1076-5670(10)62005-8
 """
@@ -88,7 +89,8 @@ examples_merge_from_raw_files_with_post_demosaicing.ipynb>`_.
 
     References
     ----------
-    -   :cite:`Losson2010c`
+    [Losson2010c]_
+
     """
 
     CFA = np.asarray(CFA).astype('float32')
