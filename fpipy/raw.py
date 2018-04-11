@@ -5,6 +5,7 @@
 Example
 -------
 Loading, converting and plotting data can be done as follows::
+
     import xarray as xr
     import fpipy as fpi
     import matplotlib

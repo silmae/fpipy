@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+#templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -58,8 +58,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'FPIpy'
-copyright = u"2018, the FPIpy developers"
+project = u'fpipy'
+copyright = u"2018, the FPIpy developers and the University of Jyväskylä"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -145,7 +145,7 @@ html_theme = 'sphinx_rtd_theme'
 # here, relative to this directory. They are copied after the builtin
 # static files, so a file named "default.css" will overwrite the builtin
 # "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
@@ -261,8 +261,8 @@ texinfo_documents = [
      u'Fabry-Perot Imaging in Python Documentation',
      u'Matti A. Eskelinen',
      'fpipy',
-     'One line description of project.',
-     'Miscellaneous'),
+     'Tools for reading and manipulating raw data from a Fabry-Perot interferometer based hyperspectral imager.',
+     'Data Analysis'),
 ]
 
 # Documents to append as an appendix to all manuals.
