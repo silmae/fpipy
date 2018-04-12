@@ -23,3 +23,7 @@ def test_raw_envi_file_loading(raw):
 
 def test_subtract_dark_rollover(raw):
     assert np.all(fpi.raw.subtract_dark(raw.cfa) <= raw.cfa)
+
+
+def test_radiance_calculation_passes(raw):
+    assert type(fpi.raw_to_radiance(raw)) is xr.DataArray
