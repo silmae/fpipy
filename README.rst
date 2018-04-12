@@ -18,7 +18,8 @@ Fabry-Perot Imaging in Python
      :alt: Updates
 
 
-Tools for reading and manipulating raw data from a Fabry-Perot interferometer based hyperspectral imager.
+Tools for reading and manipulating raw data from
+a Fabry-Perot interferometer based hyperspectral imager.
 
 
 * Free software: MIT license

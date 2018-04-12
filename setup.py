@@ -31,7 +31,8 @@ test_requirements = [
 setup(
     name='fpipy',
     version='0.1.0',
-    description="Tools for reading and manipulating raw data from a Fabry-Perot interferometer based hyperspectral imager.",
+    description="Tools for reading and manipulating raw data from
+    a Fabry-Perot interferometer based hyperspectral imager.",
     long_description=readme + '\n\n' + history,
     author="Matti A. Eskelinen",
     author_email='matti.a.eskelinen@student.jyu.fi',

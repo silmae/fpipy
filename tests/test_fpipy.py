@@ -27,3 +27,4 @@ def test_subtract_dark_rollover(raw):
 
 def test_radiance_calculation_passes(raw):
     assert type(fpi.raw_to_radiance(raw)) is xr.DataArray
+

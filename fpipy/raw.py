@@ -115,8 +115,8 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     if dataset.dark_layer_included:
         layers = subtract_dark(dataset.cfa.astype('int16'))
     else:
-        raise UserWarning('Dark layer is not included in dataset!')
         layers = dataset.cfa
+        raise UserWarning('Dark layer is not included in dataset!')
 
     if pattern is None:
         pattern = dataset.bayer_pattern

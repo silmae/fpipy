@@ -14,7 +14,8 @@ To install Fabry-Perot Imaging in Python, run this command in your terminal:
 
     $ pip install fpipy
 
-This is the preferred method to install Fabry-Perot Imaging in Python, as it will always install the most recent stable release. 
+This is the preferred method to install Fabry-Perot Imaging in Python,
+as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,7 +27,7 @@ you through the process.
 From sources
 ------------
 
-The sources for Fabry-Perot Imaging in Python can be downloaded from the `Github repo`_.
+The sources for fpipy can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
