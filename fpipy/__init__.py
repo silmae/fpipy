@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 
 """Top-level package for Fabry-Perot Imaging in Python."""
 
