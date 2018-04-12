@@ -16,6 +16,7 @@ requirements = [
     'xarray',
     'rasterio',
     'colour_demosaicing',
+    'configparser;python_version<"3.4"',
 ]
 
 setup_requirements = [
