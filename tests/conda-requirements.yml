@@ -1,0 +1,9 @@
+name: test-environment
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - xarray
+  - rasterio
+  - flake8
+  - pytest
