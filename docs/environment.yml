@@ -7,3 +7,5 @@ dependencies:
   - numpy
   - xarray
   - rasterio
+  - pip:
+    - colour-demosaicing
