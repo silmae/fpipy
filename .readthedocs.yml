@@ -3,3 +3,5 @@ python:
 
 conda:
   file: docs/environment.yml
+
+requirements_file: docs/requirements_doc.txt
