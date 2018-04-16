@@ -1,5 +1,5 @@
 python:
-  pip_install: false
+  pip_install: true
 
 conda:
   file: docs/environment.yml
