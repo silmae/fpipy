@@ -13,10 +13,10 @@ def create_cfa(rad, S, pattern):
 
     Parameters
     ----------
-    rad : xr.DataArray
+    rad : xarray.DataArray
         Radiance datacube with wavelength information.
 
-    S : list of xr.DataArrays
+    S : list of xarray.DataArray
         Responses for different colours of the CFA for each wavelength
 
     pattern : BayerPattern or str
@@ -24,17 +24,20 @@ def create_cfa(rad, S, pattern):
 
     Returns
     -------
+    cfa : `xarray.Dataset`
+        CFA images with the given pattern and responses.
 
-    xr.DataSet
 
     Examples
     --------
+    Using a mockup response matrix to create a CFA from radiance::
 
         import xarray as xr
         import numpy as np
+        from fpipy.data import house_rad
 
-        # load radiance data
-        rad = xr.open_rasterio('house_crop_4b_RAD.dat')
+        # load example radiance data
+        rad = house_rad()
         rad = rad.swap_dims({'band':'wavelength'})
 
         # create a mockup response matrix
