@@ -4,6 +4,8 @@
 """
 
 from xarray import open_rasterio
+import os.path as osp
+from .. import data_dir
 from ..raw import read_cfa
 
 __all__ = ['house_radiance',
@@ -26,7 +28,7 @@ def house_raw():
 
     """
 
-    return read_cfa('house_crop_4b_RAW.dat')
+    return read_cfa(osp.join(data_dir, 'house_crop_4b_RAW.dat'))
 
 
 def house_radiance():
@@ -45,4 +47,4 @@ def house_radiance():
 
     """
 
-    return open_rasterio('house_crop_4b_RAD.dat')
+    return open_rasterio(osp.join(data_dir, 'house_crop_4b_RAD.dat'))
