@@ -7,13 +7,14 @@ import pytest
 
 
 import fpipy as fpi
+from fpipy.data import house_raw
 import xarray as xr
 import numpy as np
 
 
 @pytest.fixture
 def raw():
-    raw = fpi.read_cfa('data/house_crop_4b_RAW.dat')
+    raw = house_raw()
     return raw
 
 
