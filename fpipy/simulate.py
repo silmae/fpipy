@@ -34,22 +34,32 @@ def create_cfa(rad, S, pattern):
 
         import xarray as xr
         import numpy as np
-        from fpipy.data import house_rad
+        from fpipy.data import house_radiance
+        from fpipy.simulate import create_cfa
 
         # load example radiance data
-        rad = house_rad()
+        rad = house_radiance()
         rad = rad.swap_dims({'band':'wavelength'})
 
         # create a mockup response matrix
         S1 = xr.DataArray(
-            np.ones((3,4)),
+            np.eye(3),
             dims=('colour', 'wavelength'),
             coords={
                 'colour':['R','G','B'],
-                'wavelength': rad.wavelength.values
+                'wavelength': rad.wavelength.values[:-1]
                 }
             )
-        S = [S1]
+        S2 = xr.DataArray(
+            np.eye(3),
+            dims=('colour', 'wavelength'),
+            coords={
+                'colour':['R','G','B'],
+                'wavelength': rad.wavelength.values[1:]
+                }
+            )
+
+        S = [S1, S2]
 
         # Simulate a RGGB pattern CFA
         simulated_raw = create_cfa(rad, S, 'RGGB')
