@@ -74,12 +74,11 @@ def create_cfa(rad, S, pattern):
         s = S[b]
         for c in s.colour:
             mask = masks.sel(colour=c)
-            cdata = xr.dot(
+            cfadata[b][mask] = xr.dot(
                 s.sel(colour=c),
                 rad.sel(wavelength=s.wavelength),
                 dims='wavelength'
-                )
-            cfadata[b][mask] = cdata.values[mask]
+                ).values[mask]
 
     cfa = xr.DataArray(
         cfadata,
