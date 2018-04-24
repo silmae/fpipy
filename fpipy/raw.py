@@ -87,6 +87,46 @@ def read_cfa(filepath):
     return dataset
 
 
+def _cfa_to_dataset(cfa, meta)
+    """Create a dataset object for containing a hyperspectral CFA image.
+
+    Parameters
+    ----------
+    cfa : np.ndarray
+        (n,y,x) array of colour filter array images.
+
+    meta : dict
+        
+
+    """
+
+    npeaks = ('band', metalist(meta, 'npeaks'))
+    wavelength = (['band', 'peak'], metalist(meta, 'wavelengths'))
+    fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
+    setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
+    sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
+
+    return xr.Dataset(
+        coords={'peak': [1, 2, 3],
+                'setpoint': [1, 2, 3],
+                'rgb': ['R', 'G', 'B']},
+
+        data_vars={'cfa': cfa,
+                   'npeaks': npeaks,
+                   'wavelength': wavelength,
+                   'fwhm': fwhm,
+                   'setpoints': setpoints,
+                   'sinvs': sinvs},
+
+        attrs={'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
+               'description': meta.get('Header', 'description').strip('"'),
+               'dark_layer_included':
+                   meta.getboolean('Header', 'dark layer included'),
+               'gain': meta.getfloat('Image0', 'gain'),
+               'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
+               'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
+
+
 def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     """Performs demosaicing and computes radiance from RGB values.
 
