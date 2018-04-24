@@ -125,8 +125,8 @@ def fpi_triplet(wl, l):
 def fsr_fpi(wl, l):
     """Free spectral range in the FPI.
 
-    The FPI etalon has air as the media, with group index
-    ng = 1.00028652 and light arrives collimated with theta = 0.
+    Special case with :math:`n_g = 1` for air and collimated light at
+    :math:`\\theta=0`.
 
     Parameters
     ----------
@@ -142,13 +142,18 @@ def fsr_fpi(wl, l):
         FSR of the FPI at the given values.
 
     """
-    ng = 1.00028652
-    theta = 0
+    ng = 1.0
+    theta = 0.0
     return free_spectral_range(wl, l, ng, theta)
 
 
 def free_spectral_range(wl, l, ng, theta):
-    """Free spectral range of the Fabry-Perot etalon.
+    """Free spectral range of the Fabry-Perot etalon as
+
+    .. math::
+
+        \\Delta\\lambda = \\frac{\\lambda^2}{2 n l \\cos(\\theta)}
+
 
     Parameters
     ----------
