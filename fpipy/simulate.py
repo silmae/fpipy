@@ -164,10 +164,49 @@ def free_spectral_range(wl, l, ng, theta):
         Gap of the etalon.
 
     ng : np.float64
-        Group refractive index of the media
+        Group refractive index of the media.
 
     theta : np.float64
-        Angle of the incident ray
+        Angle of the ligth entering the etalon.
+
+
+    Returns
+    -------
+    fsr : np.float64
+        Free spectral range of the Fabry-Perot etalon
 
     """
-    return wl**2 / (2 * ng * l * np.cos(theta))
+    return wl**2 / (2 * ng * l * np.cos(theta) + wl)
+
+
+def etalon_gap(wl, fsr, ng, theta):
+    """Approximate value of the Fabry-Perot etalon gap.
+
+    Approximates the gap length :math:`l` from the formula of the FSR as
+
+    .. math::
+
+        l = \\frac{\\lambda (\\lambda - \\Delta\\lambda)}{\\Delta\\lambda 2 n \\cos(\\theta)}
+
+    Parameters
+    ----------
+    wl : np.float64
+        Peak wavelength
+
+    fsr : np.float64
+        Free spectral range near the peak.
+
+    ng : np.float64
+        Group refractive index of the media.
+
+    theta : np.float64
+        Angle of the light entering the etalon.
+
+    Returns
+    -------
+    l : np.float64
+        Approximate gap length of the Fabry-Perot etalon.
+
+    """
+
+    return wl * (wl - fsr) / (2 * ng * fsr * np.cos(theta))
