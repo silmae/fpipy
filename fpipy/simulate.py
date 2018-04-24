@@ -179,6 +179,30 @@ def free_spectral_range(wl, l, ng, theta):
     return wl**2 / (2 * ng * l * np.cos(theta) + wl)
 
 
+def fpi_gap(wl, fsr):
+    """Approximate value of the FPI gap.
+
+    Special case of `etalon_gap` with :math:`ng = 1` and :math:`\\theta=0`.
+
+    Parameters
+    ----------
+    wl : np.float64
+        Peak wavelength
+
+    fsr : np.float64
+        Free spectral range near the peak.
+
+    Returns
+    -------
+    l : np.float64
+        Approximate gap length of the FPI.
+
+    """
+    ng = 1.0
+    theta = 0.0
+    return etalon_gap(wl, fsr, ng, theta)
+
+
 def etalon_gap(wl, fsr, ng, theta):
     """Approximate value of the Fabry-Perot etalon gap.
 
