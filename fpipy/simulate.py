@@ -74,8 +74,8 @@ def create_cfa(rad, S, pattern):
 
     # TODO: Add support for arbitrary patterns & colours
     masks = xr.DataArray(
-                np.array(masks_CFA_Bayer((w, h), str(pattern))),
-                dims=('colour', 'x', 'y'),
+                np.array(masks_CFA_Bayer((h, w), str(pattern))),
+                dims=('colour', 'y', 'x'),
                 coords={'colour': ['R', 'G', 'B'], 'y': y, 'x': x}
                 )
 
