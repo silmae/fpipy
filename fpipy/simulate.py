@@ -125,8 +125,8 @@ def fpi_triplet(wl, l):
 def fsr_fpi(wl, l):
     """Free spectral range in the FPI.
 
-    Special case with :math:`n_g = 1` for air and collimated light at
-    :math:`\\theta=0`.
+    Special case of `free_spectral_range` with :math:`n_g = 1` for air
+    and collimated light at :math:`\\theta=0`.
 
     Parameters
     ----------
