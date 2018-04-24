@@ -96,3 +96,73 @@ def create_cfa(rad, S, pattern):
         coords={'band': range(0, bs), 'x': x, 'y': y})
 
     return cfa
+
+
+def fpi_triplet(wl, l):
+    """Generate a triplet of etalon peaks (wavelengths) given the lowest.
+
+    Parameters:
+    -----------
+    wl : np.float64
+        Lowest wavelength of the triplet.
+
+    l : np.float64
+        Gap of the etalon.
+
+    Returns
+    -------
+    (wl1, wl2, wl3) : tuple of np.float64
+        Triplet of consecutive peaks of the Fabry-Perot etalon
+
+    """
+
+    wl2 = wl + fsr_fpi(wl, l)
+    wl3 = wl2 + fsr_fpi(wl2, l)
+
+    return wl, wl2, wl3
+
+
+def fsr_fpi(wl, l):
+    """Free spectral range in the FPI.
+
+    The FPI etalon has air as the media, with group index
+    ng = 1.00028652 and light arrives collimated with theta = 0.
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength of the nearest peak.
+
+    l : np.float64
+        Gap of the etalon.
+
+    Returns
+    -------
+    np.float64
+        FSR of the FPI at the given values.
+
+    """
+    ng = 1.00028652
+    theta = 0
+    return free_spectral_range(wl, l, ng, theta)
+
+
+def free_spectral_range(wl, l, ng, theta):
+    """Free spectral range of the Fabry-Perot etalon.
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength of the nearest peak.
+
+    l : np.float64
+        Gap of the etalon.
+
+    ng : np.float64
+        Group refractive index of the media
+
+    theta : np.float64
+        Angle of the incident ray
+
+    """
+    return wl**2 / (2 * ng * l * np.cos(theta))
