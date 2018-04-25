@@ -69,22 +69,22 @@ def create_cfa(rad, S, pattern):
     x, y = rad.x, rad.y
 
     # Assume that we have rectilinear coordinates
-    w, h = x.size, y.size
-    bs = len(S)
+    width, height = x.size, y.size
+    bands = len(S)
 
     # TODO: Add support for arbitrary patterns & colours
     masks = xr.DataArray(
-                np.array(masks_CFA_Bayer((h, w), str(pattern))),
+                np.array(masks_CFA_Bayer((height, width), str(pattern))),
                 dims=('colour', 'y', 'x'),
                 coords={'colour': ['R', 'G', 'B'], 'y': y, 'x': x}
                 )
 
-    cfadata = np.zeros((bs, h, w))
-    for b in range(0, bs):
-        s = S[b]
+    cfadata = np.zeros((bands, height, width))
+    for band in range(0, bands):
+        s = S[band]
         for c in s.colour:
             mask = masks.sel(colour=c)
-            cfadata[b][mask] = xr.dot(
+            cfadata[band][mask] = xr.dot(
                 s.sel(colour=c),
                 rad.sel(wavelength=s.wavelength),
                 dims='wavelength'
@@ -92,8 +92,8 @@ def create_cfa(rad, S, pattern):
 
     cfa = xr.DataArray(
         cfadata,
-        dims={'band': range(0, b), 'y': range(0, h), 'x': range(0, w)},
-        coords={'band': range(1, bs + 1), 'x': x, 'y': y})
+        dims={'band': range(0, bands), 'y': range(0, height), 'x': range(0, width)},
+        coords={'band': range(1, bands + 1), 'x': x, 'y': y})
 
     return cfa
 
