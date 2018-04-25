@@ -93,7 +93,7 @@ def create_cfa(rad, S, pattern):
     cfa = xr.DataArray(
         cfadata,
         dims={'band': range(0, b), 'y': range(0, h), 'x': range(0, w)},
-        coords={'band': range(0, bs), 'x': x, 'y': y})
+        coords={'band': range(1, bs + 1), 'x': x, 'y': y})
 
     return cfa
 
