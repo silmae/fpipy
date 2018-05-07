@@ -40,6 +40,7 @@ setup(
     author_email='matti.a.eskelinen@student.jyu.fi',
     url='https://github.com/silmae/fpipy',
     packages=find_packages(include=['fpipy']),
+    scripts=['bin/raw2rad'],
     include_package_data=True,
     install_requires=requirements,
     license="MIT license",
@@ -57,5 +58,8 @@ setup(
     ],
     test_suite='tests',
     tests_require=test_requirements,
+    extras_require={
+        'progressbar': ['tqdm'],
+        },
     setup_requires=setup_requirements,
 )
