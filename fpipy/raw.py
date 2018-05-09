@@ -144,6 +144,7 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
                          coords=['wavelength', 'fwhm'])
     radiance.attrs = {key: value for key, value in dataset.attrs.items()
                       if key not in ['dark_layer_included', 'bayer_pattern']}
+    radiance.name = 'radiance'
 
     return radiance
 
