@@ -8,8 +8,6 @@ Contributions are welcome.
 
 Report bugs or give feedback at https://github.com/silmae/fpipy/issues.
 
-fpipy could always use more documentation and tests.
-
 Get Started!
 ------------
 
@@ -20,11 +18,12 @@ Ready to contribute? Here's how to set up `fpipy` for local development.
 
     $ git clone git@github.com:your_name_here/fpipy.git
 
-3. Install your local copy into a virtualenv or conda environment.
+3. Install the dependencies using the provided conda environment file
+   and then the package itself using pip::
 
     $ cd fpipy/
-    $ conda create -n fpipy --file requirements_dev.txt
-    $ source activate fpipy
+    $ conda env create -f envs/development.yml
+    $ source activate fpipy-dev
     $ pip install -e .
 
 4. Create a branch for local development::
