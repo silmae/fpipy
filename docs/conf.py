@@ -31,6 +31,10 @@ project_root = os.path.dirname(cwd)
 # version is used.
 sys.path.insert(0, project_root)
 
+import mock
+MOCK_MODULES=['rasterio', 'xarray', 'colour', 'colour-demosaicing', 'colour.utilities']
+for mod in MOCK_MODULES:
+    sys.modules[mod] = mock.Mock()
 import fpipy
 
 # -- General configuration ---------------------------------------------
