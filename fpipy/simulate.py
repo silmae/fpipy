@@ -92,7 +92,11 @@ def create_cfa(rad, S, pattern):
 
     cfa = xr.DataArray(
         cfadata,
-        dims={'band': range(0, bands), 'y': range(0, height), 'x': range(0, width)},
+        dims={
+            'band': range(0, bands),
+            'y': range(0, height),
+            'x': range(0, width)
+            },
         coords={'band': range(1, bands + 1), 'x': x, 'y': y})
 
     return cfa
@@ -210,7 +214,8 @@ def etalon_gap(wl, fsr, ng, theta):
 
     .. math::
 
-        l = \\frac{\\lambda (\\lambda - \\Delta\\lambda)}{\\Delta\\lambda 2 n \\cos(\\theta)}
+        l = \\frac{\\lambda (\\lambda - \\Delta\\lambda)}
+                  {\\Delta\\lambda 2 n \\cos(\\theta)}
 
     Parameters
     ----------
