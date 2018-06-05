@@ -115,7 +115,11 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    html_theme = 'sphinx_rtd_theme'
+else:
+    html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -245,7 +249,7 @@ latex_documents = [
 man_pages = [
     ('index', 'fpipy',
      u'Fabry-Perot Imaging in Python Documentation',
-     [u'Matti A. Eskelinen'], 1)
+     [u'Matti A. Eskelinen', u'Jyri Hämäläinen'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -260,7 +264,7 @@ man_pages = [
 texinfo_documents = [
     ('index', 'fpipy',
      u'Fabry-Perot Imaging in Python Documentation',
-     u'Matti A. Eskelinen',
+     u'Matti A. Eskelinen and Jyri Hämäläinen',
      'fpipy',
      'Tools for reading and manipulating raw data from a Fabry-Perot interferometer based hyperspectral imager.',
      'Data Analysis'),
@@ -277,3 +281,11 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# Run autodoc explicitly for readthedocs
+def run_apidoc(_):
+    from sphinx.apidoc import main
+    main(['-T', '-M', '-o', cwd, '../fpipy'])
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
