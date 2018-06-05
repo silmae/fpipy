@@ -2,4 +2,4 @@ python:
   pip_install: false
 
 conda:
-  file: docs/environment.yml
+  file: envs/readthedocs.yml
