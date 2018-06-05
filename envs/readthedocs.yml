@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.6
+  - sphinx=1.7.0
   - numpy
   - xarray
   - rasterio
