@@ -21,13 +21,11 @@ requirements = [
 
 setup_requirements = [
     'pytest-runner',
-    # TODO(maaleske): put setup requirements (distutils extensions, etc.) here
 ]
 
 test_requirements = [
     'pytest',
     'flake8',
-    # TODO: put package test requirements here
 ]
 
 setup(
