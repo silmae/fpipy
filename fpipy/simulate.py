@@ -105,8 +105,8 @@ def create_cfa(rad, S, pattern):
 def fpi_triplet(wl, l):
     """Generate a triplet of etalon peaks (wavelengths) given the lowest.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     wl : np.float64
         Lowest wavelength of the triplet.
 
