@@ -1,5 +1,4 @@
 python:
   pip_install: false
 
-conda:
-  file: envs/readthedocs.yml
+requirements_file: envs/readthedocs.txt
