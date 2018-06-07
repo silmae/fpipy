@@ -121,7 +121,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if True: # on_rtd:
+if on_rtd:
     html_theme = 'sphinx_rtd_theme'
 else:
     html_theme = 'default'
@@ -223,7 +223,7 @@ latex_elements = {
 latex_documents = [
     ('index', 'fpipy.tex',
      u'Fabry-Perot Imaging in Python Documentation',
-     u'Matti A. Eskelinen', 'manual'),
+     u'Matti A. Eskelinen, Jyri Hämäläinen', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at
