@@ -46,6 +46,7 @@ import fpipy
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.autoprogram',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.imgmath']
@@ -120,7 +121,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
+if True: # on_rtd:
     html_theme = 'sphinx_rtd_theme'
 else:
     html_theme = 'default'

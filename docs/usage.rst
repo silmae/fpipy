@@ -2,6 +2,19 @@
 Usage
 =====
 
+From the command line
+---------------------
+
+Installing the library using pip installs the following
+command line programs:
+
+.. toctree::
+
+    raw2rad
+
+As a library
+------------
+
 Loading, converting and plotting data can be done as follows::
 
     import xarray as xr

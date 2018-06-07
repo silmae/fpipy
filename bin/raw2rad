@@ -42,35 +42,47 @@ def readable_cfa(fname):
         return fname
 
 
-def main(argv):
-    out_formats = {
-            'netCDF': save_nc,
+out_formats = {
+    'netCDF': save_nc,
             }
-    default_format = 'netCDF'
 
-    parser = argparse.ArgumentParser(
-            description='Convert raw CFA data to radiances.')
-    parser.add_argument(
-            '-f', '--format',
-            metavar='output_format',
-            default=default_format,
-            choices=out_formats.keys())
-    parser.add_argument(
-            '-o', '--odir',
-            default='.',
-            metavar='output_dir',
-            type=writable_dir)
-    parser.add_argument(
-            '-p', '--prefix',
-            default='RAD_',
-            metavar='output_prefix',
-            type=str)
-    parser.add_argument(
-            'inputs',
-            metavar='input file',
-            nargs='+',
-            type=readable_cfa)
 
+default_format = 'netCDF'
+default_prefix = '_RAD'
+default_dir = '.'
+
+parser = argparse.ArgumentParser(
+        description='Convert raw CFA data to radiances.')
+parser.add_argument(
+        '-f', '--format',
+        metavar='output_format',
+        default=default_format,
+        choices=out_formats.keys(),
+        help=('Output file format for the processed radiances, '
+              'default "{0}"'.format(default_format)))
+parser.add_argument(
+        '-o', '--odir',
+        default=default_dir,
+        metavar='output_dir',
+        type=writable_dir,
+        help=('Directory to write output files to, '
+              'default "{0}"'.format(default_dir)))
+parser.add_argument(
+        '-p', '--prefix',
+        default=default_prefix,
+        metavar='output_prefix',
+        type=str,
+        help=('Filename prefix to add to output filenames, '
+              'default "{0}"'.format(default_prefix)))
+parser.add_argument(
+        'inputs',
+        metavar='input file',
+        nargs='+',
+        type=readable_cfa,
+        help=('List of files to process to radiance.'))
+
+
+def main(argv):
     args = parser.parse_args(argv)
 
     savecmd = out_formats[args.format]
