@@ -3,12 +3,15 @@
 """ Test images.
 """
 
-from xarray import open_rasterio
 import os.path as osp
-from .. import data_dir
+from xarray import open_rasterio
 from ..raw import read_cfa
 
-__all__ = ['house_radiance',
+data_dir = osp.abspath(osp.dirname(__file__))
+
+
+__all__ = ['data_dir',
+           'house_radiance',
            'house_raw',
            ]
 
