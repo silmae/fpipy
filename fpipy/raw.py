@@ -21,6 +21,7 @@ Loading, converting and plotting data can be done as follows::
 import os
 from enum import IntEnum
 import xarray as xr
+import numpy as np
 import colour_demosaicing as cdm
 from .meta import load_hdt, metalist
 
@@ -98,6 +99,61 @@ def _cfa_to_dataset(cfa, meta):
                'gain': meta.getfloat('Image0', 'gain'),
                'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
                'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
+
+
+def cfa_stack_to_da(
+        cfa,
+        pattern,
+        x=None,
+        y=None,
+        index=None,
+        ):
+    """Check metadata validity and form a DataArray from a stack of FPI images.
+
+    Parameters
+    ----------
+    cfa: np.ndarray
+        (height, width, n_indices) stack of CFA images taken through a
+        Fabry-Perot tunable filter.
+
+    x: array-like, optional
+        1-D array of unique x coordinates.
+        Defaults to a vector of pixel centers from 0.5 to width - 0.5.
+
+    y: array-like, optional
+        1-D array of unique y coordinates.
+        Defaults to a vector of pixel centers from 0.5 to height - 0.5.
+
+    index: array-like, optional
+        1-d array of unique indices identifying settings used for each image.
+        Defaults to a vector of integers from 0 to n_indices.
+
+    pattern: str or BayerPattern
+        Bayer filter pattern of the camera CFA.
+
+
+    Returns
+    -------
+    xr.DataArray
+        `xr.DataArray` containing the CFA stack with labeled dimensions.
+    """
+
+    if x is None:
+        x = np.arange(0, cfa.shape[1]) + 0.5
+
+    if y is None:
+        y = np.arange(0, cfa.shape[0]) + 0.5
+
+    if index is None:
+        index = np.arange(0, cfa.shape[2])
+
+    cfa_da = xr.DataArray(
+            cfa,
+            dims=('x', 'y', 'index'),
+            coords={'x': x, 'y': y, 'index': index},
+            attrs={'pattern': str(pattern)}
+            )
+    return cfa_da
 
 
 def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):

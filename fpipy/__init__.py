@@ -10,4 +10,4 @@ __version__ = '0.1.0'
 import fpipy.simulate
 import fpipy.data
 from fpipy.meta import load_hdt, image_meta
-from fpipy.raw import read_cfa, raw_to_radiance, demosaic, subtract_dark
+from fpipy.raw import read_cfa, raw_to_radiance, demosaic, subtract_dark, cfa_stack_to_da
