@@ -87,7 +87,7 @@ def read_cfa(filepath):
     return dataset
 
 
-def _cfa_to_dataset(cfa, meta)
+def _cfa_to_dataset(cfa, meta):
     """Create a dataset object for containing a hyperspectral CFA image.
 
     Parameters
