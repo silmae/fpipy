@@ -149,8 +149,8 @@ def cfa_stack_to_da(
 
     cfa_da = xr.DataArray(
             cfa,
-            dims=('x', 'y', 'index'),
-            coords={'x': x, 'y': y, 'index': index},
+            dims=('y', 'x', 'index'),
+            coords={'y': y, 'x': x, 'index': index},
             attrs={'pattern': str(pattern)}
             )
     return cfa_da
