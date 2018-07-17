@@ -43,10 +43,10 @@ def test_cfa_stack_to_da_required_params():
 
 @pytest.mark.parametrize('h, exp_y', [(1, [0.5]), (3, [0.5, 1.5, 2.5])])
 @pytest.mark.parametrize('w, exp_x', [(1, [0.5]), (3, [0.5, 1.5, 2.5])])
-@pytest.mark.parametrize('k, exp_i', [(1, [0]), (3, [0, 1, 2])])
-def test_cfa_stack_to_da_defaults(h, w, k, exp_y, exp_x, exp_i):
+@pytest.mark.parametrize('n, exp_i', [(1, [0]), (3, [0, 1, 2])])
+def test_cfa_stack_to_da_defaults(h, w, n, exp_y, exp_x, exp_i):
 
-    cfa = np.ones((h, w, k))
+    cfa = np.ones((n, h, w))
     da = fpr.cfa_stack_to_da(cfa, 'RGGB')
 
     assert_array_equal(da.y, exp_y)
@@ -56,10 +56,10 @@ def test_cfa_stack_to_da_defaults(h, w, k, exp_y, exp_x, exp_i):
 
 @pytest.mark.parametrize('h, exp_y', [(1, [41]), (3, [10, 20, 40])])
 @pytest.mark.parametrize('w, exp_x', [(1, [42]), (3, [11, 21, 42])])
-@pytest.mark.parametrize('k, exp_i', [(1, [43]), (3, [12, 22, 44])])
-def test_cfa_stack_to_da_default_overrides(h, w, k, exp_y, exp_x, exp_i):
+@pytest.mark.parametrize('n, exp_i', [(1, [43]), (3, [12, 22, 44])])
+def test_cfa_stack_to_da_default_overrides(h, w, n, exp_y, exp_x, exp_i):
 
-    cfa = np.ones((h, w, k))
+    cfa = np.ones((n, h, w))
     da = fpr.cfa_stack_to_da(cfa, 'RGGB', x=exp_x, y=exp_y, index=exp_i)
     assert_array_equal(da.y, exp_y)
     assert_array_equal(da.x, exp_x)

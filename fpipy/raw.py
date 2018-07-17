@@ -26,7 +26,7 @@ from .meta import metalist
 
 
 def _cfa_to_dataset(cfa, meta):
-    """Create a dataset object for containing a hyperspectral CFA image.
+    """Combine raw CFA data with metadata into an `xr.Dataset` object.
 
     Parameters
     ----------
@@ -67,17 +67,24 @@ def _cfa_to_dataset(cfa, meta):
 def cfa_stack_to_da(
         cfa,
         pattern,
+        index=None,
         x=None,
         y=None,
-        index=None,
         ):
     """Check metadata validity and form a DataArray from a stack of FPI images.
 
     Parameters
     ----------
     cfa: np.ndarray
-        (height, width, n_indices) stack of CFA images taken through a
+        (n_indices, height, width) stack of CFA images taken through a
         Fabry-Perot tunable filter.
+
+    pattern: str or BayerPattern
+        Bayer filter pattern of the camera CFA.
+
+    index: array-like, optional
+        1-d array of unique indices identifying settings used for each image.
+        Defaults to a vector of integers from 0 to n_indices.
 
     x: array-like, optional
         1-D array of unique x coordinates.
@@ -87,13 +94,6 @@ def cfa_stack_to_da(
         1-D array of unique y coordinates.
         Defaults to a vector of pixel centers from 0.5 to height - 0.5.
 
-    index: array-like, optional
-        1-d array of unique indices identifying settings used for each image.
-        Defaults to a vector of integers from 0 to n_indices.
-
-    pattern: str or BayerPattern
-        Bayer filter pattern of the camera CFA.
-
 
     Returns
     -------
@@ -101,19 +101,20 @@ def cfa_stack_to_da(
         `xr.DataArray` containing the CFA stack with labeled dimensions.
     """
 
+    if index is None:
+        index = np.arange(0, cfa.shape[0])
+
     if x is None:
-        x = np.arange(0, cfa.shape[1]) + 0.5
+        x = np.arange(0, cfa.shape[2]) + 0.5
 
     if y is None:
-        y = np.arange(0, cfa.shape[0]) + 0.5
+        y = np.arange(0, cfa.shape[1]) + 0.5
 
-    if index is None:
-        index = np.arange(0, cfa.shape[2])
 
     cfa_da = xr.DataArray(
             cfa,
-            dims=('y', 'x', 'index'),
-            coords={'y': y, 'x': x, 'index': index},
+            dims=('index', 'y', 'x'),
+            coords={'index': index, 'y': y, 'x': x},
             attrs={'pattern': str(pattern)}
             )
     return cfa_da
