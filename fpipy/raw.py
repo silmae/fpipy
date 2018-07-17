@@ -110,7 +110,6 @@ def cfa_stack_to_da(
     if y is None:
         y = np.arange(0, cfa.shape[1]) + 0.5
 
-
     cfa_da = xr.DataArray(
             cfa,
             dims=('index', 'y', 'x'),
