@@ -1,65 +1,28 @@
 # -*- coding: utf-8 -*-
 
-"""Reading and interpolating raw CFA data.
+"""Functions for manipulating raw CFA data.
 
 Example
 -------
-Loading, converting and plotting data can be done as follows::
+Calculating radiances from raw data and plotting them can be done as follows::
 
     import xarray as xr
     import fpipy as fpi
     import matplotlib
-    from fpipy import data_dir
     import os.path as osp
+    from fpipy.data import house_raw
 
 
-    data = fpi.read_cfa(osp.join(data_dir, 'house_crop_4b_RAW.dat'))
+    data = house_raw() # Example raw data
     radiance = fpi.raw_to_radiance(data)
     radiance.sel(wavelength=600, method='nearest').plot()
 """
 
-import os
 from enum import IntEnum
-import xarray as xr
 import numpy as np
+import xarray as xr
 import colour_demosaicing as cdm
-from .meta import load_hdt, metalist
-
-
-def read_cfa(filepath):
-    """Read a raw CFA datafile and metadata to an xarray Dataset.
-
-    For the fpi sensor in JYU, the metadata in the ENVI datafile is not
-    relevant but is preserved as dataset.cfa.attrs just in case.
-    Wavelength and fwhm data will be replaced with information from metadata
-    and number of layers etc. are omitted as redundant.
-    Gain and bayer pattern are assumed to be constant within each file.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the datafile to be opened, either with or without extension.
-        Expects data and metadata to have extensions .dat and .hdt.
-
-    Returns
-    -------
-    dataset : xarray.Dataset
-        Dataset derived from the raw image data and accompanying metadata.
-    """
-
-    base = os.path.splitext(filepath)[0]
-    datfile = base + '.dat'
-    hdtfile = base + '.hdt'
-
-    cfa = xr.open_rasterio(datfile)
-    meta = load_hdt(hdtfile)
-
-    if 'fwhm' in cfa.coords:
-        cfa = cfa.drop('fwhm')
-    if 'wavelength' in cfa.coords:
-        cfa = cfa.drop('wavelength')
-
-    return _cfa_to_dataset(cfa, meta)
+from .meta import metalist
 
 
 def _cfa_to_dataset(cfa, meta):

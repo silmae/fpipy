@@ -2,21 +2,7 @@
 
 """Metadata parsing."""
 
-import configparser
 import numpy as np
-import os
-
-
-def load_hdt(hdtfile):
-    """Load metadata from a .hdt header file (VTT format)."""
-
-    if not os.path.isfile(hdtfile):
-        raise(IOError('Header file {} does not exist'.format(hdtfile)))
-
-    meta = configparser.ConfigParser()
-    meta.read(hdtfile)
-
-    return meta
 
 
 def image_meta(meta, idx):

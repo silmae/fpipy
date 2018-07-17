@@ -5,7 +5,7 @@
 
 import os.path as osp
 from xarray import open_rasterio
-from ..raw import read_cfa
+from ..io import read_cfa
 
 data_dir = osp.abspath(osp.dirname(__file__))
 
