@@ -43,8 +43,7 @@ def test_cfa_stack_to_da_required_params():
     assert 'missing 2 required positional arguments' in str(e.value)
 
     with pytest.raises(TypeError) as e:
-        cfa = np.ones((2,2,2))
-        da = fpi.raw.cfa_stack_to_da(cfa)
+        da = fpi.raw.cfa_stack_to_da(1)
     assert 'missing 1 required positional argument' in str(e.value)
 
 
@@ -56,6 +55,18 @@ def test_cfa_stack_to_da_defaults(h, w, k, exp_y, exp_x, exp_i):
     cfa = np.ones((h, w, k))
     da = fpi.raw.cfa_stack_to_da(cfa, 'RGGB')
 
+    assert_array_equal(da.y, exp_y)
+    assert_array_equal(da.x, exp_x)
+    assert_array_equal(da.index, exp_i)
+
+
+@pytest.mark.parametrize('h, exp_y', [(1, [41]), (3, [10, 20, 40])])
+@pytest.mark.parametrize('w, exp_x', [(1, [42]), (3, [11, 21, 42])])
+@pytest.mark.parametrize('k, exp_i', [(1, [43]), (3, [12, 22, 44])])
+def test_cfa_stack_to_da_default_overrides(h, w, k, exp_y, exp_x, exp_i):
+
+    cfa = np.ones((h, w, k))
+    da = fpi.raw.cfa_stack_to_da(cfa, 'RGGB', x=exp_x, y=exp_y, index=exp_i)
     assert_array_equal(da.y, exp_y)
     assert_array_equal(da.x, exp_x)
     assert_array_equal(da.index, exp_i)
