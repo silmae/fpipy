@@ -22,26 +22,51 @@ from enum import IntEnum
 import numpy as np
 import xarray as xr
 import colour_demosaicing as cdm
-from .meta import metalist
 
 
-def _cfa_to_dataset(cfa, meta):
+def _cfa_to_dataset(
+        cfa,
+        npeaks,
+        wavelength,
+        fwhm,
+        setpoints,
+        sinvs,
+        attrs=None
+        ):
     """Combine raw CFA data with metadata into an `xr.Dataset` object.
 
     Parameters
     ----------
-    cfa : np.ndarray
-        (n,y,x) array of colour filter array images.
+    cfa: xr.DataArray
+        (n,y,x) array of colour filter array images with labeled dimensions
+        index, x and y.
+        See `cfa_stack_to_da`.
 
-    meta : dict
+    npeaks: xr.DataArray
+        Number of separate passbands (peaks) for each index.
+
+    wavelength: xr.DataArray
+        Wavelengths corresponding to each peak for each index.
+
+    fwhm: xr.DataArray
+        FWHMs corresponding to each peak for each index.
+
+    setpoints: xr.DataArray
+        1st setpoints (voltage values sent to the PFPI driver)
+        for each index.
+
+    sinvs: xr.DataArray
+        Inversion coefficients for radiance calculation corresponding
+        to each index, peak and colour.
+
+    attrs: dict, optional
+        Extra attributes to add to the dataset.
+
+    Returns
+    -------
+    xr.Dataset
 
     """
-
-    npeaks = ('band', metalist(meta, 'npeaks'))
-    wavelength = (['band', 'peak'], metalist(meta, 'wavelengths'))
-    fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
-    setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
-    sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
 
     return xr.Dataset(
         coords={'peak': [1, 2, 3],
@@ -54,14 +79,8 @@ def _cfa_to_dataset(cfa, meta):
                    'fwhm': fwhm,
                    'setpoints': setpoints,
                    'sinvs': sinvs},
-
-        attrs={'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
-               'description': meta.get('Header', 'description').strip('"'),
-               'dark_layer_included':
-                   meta.getboolean('Header', 'dark layer included'),
-               'gain': meta.getfloat('Image0', 'gain'),
-               'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
-               'bayer_pattern': meta.getint('Image0', 'bayer pattern')})
+        attrs=attrs
+        )
 
 
 def cfa_stack_to_da(

@@ -7,6 +7,7 @@ import xarray as xr
 import os
 import configparser
 from .raw import _cfa_to_dataset
+from .meta import metalist
 
 
 def load_hdt(hdtfile):
@@ -54,4 +55,28 @@ def read_cfa(filepath):
     if 'wavelength' in cfa.coords:
         cfa = cfa.drop('wavelength')
 
-    return _cfa_to_dataset(cfa, meta)
+    npeaks = ('band', metalist(meta, 'npeaks'))
+    wavelength = (['band', 'peak'], metalist(meta, 'wavelengths'))
+    fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
+    setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
+    sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
+
+    attrs = {
+        'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
+        'description': meta.get('Header', 'description').strip('"'),
+        'dark_layer_included':
+            meta.getboolean('Header', 'dark layer included'),
+        'gain': meta.getfloat('Image0', 'gain'),
+        'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
+        'bayer_pattern': meta.getint('Image0', 'bayer pattern')
+        }
+
+    return _cfa_to_dataset(
+            cfa,
+            npeaks,
+            wavelength,
+            fwhm,
+            setpoints,
+            sinvs,
+            attrs=attrs
+            )
