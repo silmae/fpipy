@@ -4,10 +4,58 @@
 """
 
 import xarray as xr
+import pandas as pd
 import os
 import configparser
 from .raw import _cfa_to_dataset
 from .meta import metalist
+
+
+def read_calibration(calibfile):
+    """Read calibration data from a CSV file and return an `xr.Dataset`."""
+
+    df = pd.read_csv(calibfile, delimiter='\t', index_col='index')
+
+    ds = xr.Dataset()
+    ds.coords['index'] = xr.DataArray(df.index, dims=('index'))
+
+    ds['npeaks'] = xr.DataArray(df['Npeaks'], dims=('index'))
+
+    spcols = [col for col in df.columns if 'SP' in col]
+    if spcols:
+        ds['setpoint'] = xr.DataArray(
+            df[spcols],
+            dims=('index', 'setpoint_index')
+            )
+    else:
+        raise UserWarning('Setpoint information not found, omitting.')
+
+    wlcols = [col for col in df.columns if 'PeakWL' in col]
+    fwhmcols = [col for col in df.columns if 'FWHM' in col]
+    sinvcols = [col for col in df.columns if 'Sinv' in col]
+
+    ds.coords['peak_index'] = ('peak_index', [1, 2, 3])
+
+
+    ds['wavelength'] = xr.DataArray(
+        df[wlcols],
+        dims=('index', 'peak_index'),
+        coords={'index': ds.index, 'peak_index': ds.peak_index}
+        )
+
+    ds['fwhm'] = xr.DataArray(
+        df[fwhmcols],
+        dims=('index', 'peak_index'),
+        coords={'index': ds.index, 'peak_index': ds.peak_index}
+        )
+
+    ds['sinv'] = xr.concat(
+        [xr.DataArray(df[sinvcols[k*3:k*3+3]], dims=('index', 'peak_index'),
+            coords={'index': ds.index, 'peak_index': ds.peak_index, 'colour': c})
+         for k,c in enumerate('RGB')],
+        dim='colour')
+
+    return ds
 
 
 def load_hdt(hdtfile):
