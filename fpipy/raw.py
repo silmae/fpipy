@@ -196,30 +196,57 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     return radiance
 
 
-def subtract_dark(array, dark=None):
-    """Substracts dark reference from other image layers.
+def subtract_dark(data, dark=None):
+    """Subtracts dark current reference from other image layers.
+
+    Subtracts a dark reference frame from all the layers in the given data
+    and clamps any negative values in the result to zero.
 
     Parameters
     ----------
-    array : xarray.DataArray
+    data : xarray.DataArray or xarray.DataSet
+        Dataset containing the raw images (including dark current)
+        either directly (if DataArray) or as the .cfa attribute (if Dataset).
+        If data contains an attribute called 'dark', it is used as
+        the dark reference if one is not explicitly given.
 
     dark : xarray.DataArray, optional
-        This is typically included as the first layer of array.
+        Dark current reference. If passed explicitly, is used instead of
+        any existing dark reference in data.
 
     Returns
     -------
-    refarray : xarray.DataArray
-        Layers from which the dark reference layer has been substracted.
-        Resulting array will have dtype float64.
+    refarray : xarray.DataArray or xarray.Dataset
+        Data from which the dark current reference has been subtracted.
+        Resulting array will have dtype float64, with negative values
+        clamped to 0.
+        If an included dark reference was supplied, it is removed from the
+        result.
+
     """
 
     if dark is None:
-        output = array[1:] - array[0]
-    else:
-        output = array[:] - dark
+        try:
+            dark = data['dark']
+            data = data.drop('dark')
+        except KeyError:
+            raise ValueError(
+                    'Dark reference was not supplied nor included in data.'
+                    )
 
-    output.values[output.values < 0] = 0
-    return output
+    try:
+        data['cfa'] = _subtract_dark(data['cfa'], dark)
+    except KeyError:
+        data = _subtract_dark(data, dark)
+
+    return data
+
+
+def _subtract_dark(array, dark):
+    """Subtract dark from array and clip to non-negative values."""
+    result = array.astype(np.float64) - dark.astype(np.float64)
+    result.clip(min=0)
+    return result
 
 
 class BayerPattern(IntEnum):
