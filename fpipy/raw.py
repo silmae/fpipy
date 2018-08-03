@@ -13,7 +13,8 @@ Calculating radiances from raw data and plotting them can be done as follows::
     from fpipy.data import house_raw
 
 
-    data = house_raw() # Example raw data
+    data = house_raw() # Example raw data (including dark current)
+    data = subtract_dark(data)
     radiance = fpi.raw_to_radiance(data)
     radiance.sel(wavelength=600, method='nearest').plot()
 """
@@ -26,6 +27,7 @@ import colour_demosaicing as cdm
 
 def _cfa_to_dataset(
         cfa,
+        dark,
         npeaks,
         wavelength,
         fwhm,
@@ -41,6 +43,8 @@ def _cfa_to_dataset(
         (n,y,x) array of colour filter array images with labeled dimensions
         index, x and y.
         See `cfa_stack_to_da`.
+
+    dark: xr.DataArray
 
     npeaks: xr.DataArray
         Number of separate passbands (peaks) for each index.
@@ -133,7 +137,7 @@ def cfa_stack_to_da(
             cfa,
             dims=('index', 'y', 'x'),
             coords={'index': index, 'y': y, 'x': x},
-            attrs={'pattern': str(pattern)}
+            attrs={'bayer_pattern': str(pattern)}
             )
     return cfa_da
 
@@ -196,7 +200,11 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     return radiance
 
 
-def subtract_dark(data, dark=None):
+def subtract_dark(
+        data,
+        dark,
+        data_var=None,
+        dc_attr='includes_dark_current'):
     """Subtracts dark current reference from other image layers.
 
     Subtracts a dark reference frame from all the layers in the given data
@@ -206,13 +214,19 @@ def subtract_dark(data, dark=None):
     ----------
     data : xarray.DataArray or xarray.DataSet
         Dataset containing the raw images (including dark current)
-        either directly (if DataArray) or as the .cfa attribute (if Dataset).
-        If data contains an attribute called 'dark', it is used as
-        the dark reference if one is not explicitly given.
+        either directly (if DataArray) or as the given data_var.
 
-    dark : xarray.DataArray, optional
-        Dark current reference. If passed explicitly, is used instead of
-        any existing dark reference in data.
+    dark : array-like
+        Dark current reference measurement.
+
+    data_var : str, optional
+        If given, attempts to operate only on data[data_var] instead of
+        data.
+
+    dc_attr : str, optional
+        Attribute to use for checking whether the data includes dark current,
+        and to set to False afterwards.
+        Default: 'includes_dark_current'
 
     Returns
     -------
@@ -225,19 +239,27 @@ def subtract_dark(data, dark=None):
 
     """
 
-    if dark is None:
+    if data_var is None:
         try:
-            dark = data['dark']
-            data = data.drop('dark')
-        except KeyError:
-            raise ValueError(
-                    'Dark reference was not supplied nor included in data.'
-                    )
+            if not data[dc_attr]:
+                raise UserWarning(
+                    'Data already has {} set to false!'.format(dc_attr))
+        except:
+            pass
 
-    try:
-        data['cfa'] = _subtract_dark(data['cfa'], dark)
-    except KeyError:
         data = _subtract_dark(data, dark)
+        data.attrs[dc_attr] = False
+
+    else:
+        try:
+            if not data[data_var].attrs[dc_attr]:
+                raise UserWarning(
+                    'Data already has {} set to false!'.format(dc_attr))
+        except:
+            pass
+
+        data[data_var] = _subtract_dark(data[data_var], dark)
+        data[data_var].attrs[dc_attr] = False
 
     return data
 

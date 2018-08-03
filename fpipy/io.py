@@ -7,8 +7,7 @@ import xarray as xr
 import pandas as pd
 import os
 import configparser
-from .raw import _cfa_to_dataset
-from .meta import metalist
+from .meta import parse_meta_to_ds
 
 
 def read_calibration(calibfile):
@@ -58,7 +57,7 @@ def read_calibration(calibfile):
     return ds
 
 
-def load_hdt(hdtfile):
+def read_hdt(hdtfile):
     """Load metadata from a .hdt header file (VTT format)."""
 
     if not os.path.isfile(hdtfile):
@@ -67,14 +66,14 @@ def load_hdt(hdtfile):
     meta = configparser.ConfigParser()
     meta.read(hdtfile)
 
-    return meta
+    return parse_meta_to_ds(meta)
 
 
-def read_cfa(filepath):
-    """Read a raw CFA datafile and metadata to an xarray Dataset.
+def read_ENVI_cfa(filepath):
+    """Read ENVI format CFA data and metadata to an xarray Dataset.
 
-    For the fpi sensor in JYU, the metadata in the ENVI datafile is not
-    relevant but is preserved as dataset.cfa.attrs just in case.
+    For the VTT format raw ENVI files the ENVI metadata is superfluous and is
+    discarded, with the actual metadata read from the separate VTT header file.
     Wavelength and fwhm data will be replaced with information from metadata
     and number of layers etc. are omitted as redundant.
     Gain and bayer pattern are assumed to be constant within each file.
@@ -89,42 +88,42 @@ def read_cfa(filepath):
     -------
     dataset : xarray.Dataset
         Dataset derived from the raw image data and accompanying metadata.
+        If the ENVI data had an included dark layer, it is separated into
+        its own data variable in the dataset.
     """
 
     base = os.path.splitext(filepath)[0]
     datfile = base + '.dat'
     hdtfile = base + '.hdt'
 
-    cfa = xr.open_rasterio(datfile)
-    meta = load_hdt(hdtfile)
+    envi = xr.open_rasterio(datfile)
+    envi.attrs.clear()  # Drop irrelevant attributes
 
-    if 'fwhm' in cfa.coords:
-        cfa = cfa.drop('fwhm')
-    if 'wavelength' in cfa.coords:
-        cfa = cfa.drop('wavelength')
+    if 'fwhm' in envi.coords:
+        envi = envi.drop('fwhm')
+    if 'wavelength' in envi.coords:
+        envi = envi.drop('wavelength')
 
-    npeaks = ('band', metalist(meta, 'npeaks'))
-    wavelength = (['band', 'peak'], metalist(meta, 'wavelengths'))
-    fwhm = (['band', 'peak'], metalist(meta, 'fwhms'))
-    setpoints = (['band', 'setpoint'], metalist(meta, 'setpoints'))
-    sinvs = (['band', 'peak', 'rgb'], metalist(meta, 'sinvs'))
+    ds = read_hdt(hdtfile)
 
-    attrs = {
-        'fpi_temperature': meta.getfloat('Header', 'fpi temperature'),
-        'description': meta.get('Header', 'description').strip('"'),
-        'dark_layer_included':
-            meta.getboolean('Header', 'dark layer included'),
-        'gain': meta.getfloat('Image0', 'gain'),
-        'exposure': meta.getfloat('Image0', 'exposure time (ms)'),
-        'bayer_pattern': meta.getint('Image0', 'bayer pattern')
-        }
+    if ds.attrs.pop('dark layer included'):
+        dark = xr.DataArray(
+                envi.values[0, ::],
+                dims=('y', 'x'),
+                coords={'y': envi['y'], 'x': envi['x']},
+                name='Dark reference'
+                )
+        cfa_data = envi.values[1:, ::]
+        # Assume that if a dark reference is included,
+        # it has not yet been removed from the data.
+        ds.attrs['includes_dark_current'] = True
+    else:
+        dark = None
+        cfa_data = envi.values
 
-    return _cfa_to_dataset(
-            cfa,
-            npeaks,
-            wavelength,
-            fwhm,
-            setpoints,
-            sinvs,
-            attrs=attrs
-            )
+    ds['cfa'] = (['index', 'y', 'x'], cfa_data)
+
+    if dark is not None:
+        ds['dark'] = dark
+
+    return ds

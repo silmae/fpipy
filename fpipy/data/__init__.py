@@ -5,7 +5,7 @@
 
 import os.path as osp
 from xarray import open_rasterio
-from ..io import read_cfa
+from ..io import read_ENVI_cfa
 
 data_dir = osp.abspath(osp.dirname(__file__))
 
@@ -31,7 +31,7 @@ def house_raw():
 
     """
 
-    return read_cfa(osp.join(data_dir, 'house_crop_4b_RAW.dat'))
+    return read_ENVI_cfa(osp.join(data_dir, 'house_crop_4b_RAW.dat'))
 
 
 def house_radiance():
