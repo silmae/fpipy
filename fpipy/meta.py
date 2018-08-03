@@ -4,6 +4,7 @@
 
 import numpy as np
 import xarray as xr
+from .raw import BayerPattern
 
 
 def parse_meta_to_ds(meta):
@@ -40,7 +41,8 @@ def parse_image_meta(meta, layer):
     im_meta['height'] = meta.getint(layer, 'height')
     im_meta['gain'] = meta.getfloat(layer, 'gain')
     im_meta['exposure time'] = meta.getfloat(layer, 'exposure time (ms)')
-    im_meta['bayer pattern'] = meta.getint(layer, 'bayer pattern')
+    im_meta['bayer pattern'] = str(
+            BayerPattern(meta.getint(layer, 'bayer pattern')))
     im_meta['index'] = meta.getint(layer, 'index')
     im_meta['wavelength'] = parse_peakmeta(meta.get(layer, 'wavelengths'))
     im_meta['fwhm'] = parse_peakmeta(meta.get(layer, 'fwhms'))
