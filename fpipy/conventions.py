@@ -8,7 +8,7 @@ __all__ = []
 peak_coord = 'peak'
 """Index coordinate denoting passband peaks of the FPI."""
 
-peak_data = 'npeaks'
+number_of_peaks = 'npeaks'
 """Number of passband peaks included in a given image."""
 
 setpoint_coord = 'setpoint_index'
@@ -32,8 +32,14 @@ dark_reference_data = 'dark'
 wavelength_data = 'wavelength'
 """Passband center wavelength values."""
 
-fwhm_data= 'fwhm'
+fwhm_data = 'fwhm'
 """Full Width at Half Maximum values"""
+
+camera_gain = 'gain'
+"""Camera analog gain value."""
+
+camera_exposure = 'exposure'
+"""Camera exposure time."""
 
 dc_included_attr = 'includes_dark_current'
 """Attribute indicating inclusion of dark current in the data."""
@@ -47,6 +53,8 @@ image_index = 'index'
 band_index = 'band'
 """Index of a band (image or set of parameters corresponding to certain waveband)."""
 
+image_width = 'width'
+image_height = 'height'
 height_coord = 'y'
 width_coord = 'x'
 

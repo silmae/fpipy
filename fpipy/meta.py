@@ -5,6 +5,7 @@
 import numpy as np
 import xarray as xr
 from .raw import BayerPattern
+from . import conventions as c
 
 
 def parse_meta_to_ds(meta):
@@ -36,18 +37,18 @@ def parse_image_meta(meta, layer):
     """Parse metadata for a given image (layer) in the FPI data."""
 
     im_meta = xr.Dataset()
-    im_meta['npeaks'] = meta.getint(layer, 'npeaks')
-    im_meta['width'] = meta.getint(layer, 'width')
-    im_meta['height'] = meta.getint(layer, 'height')
-    im_meta['gain'] = meta.getfloat(layer, 'gain')
-    im_meta['exposure time'] = meta.getfloat(layer, 'exposure time (ms)')
-    im_meta['bayer pattern'] = str(
+    im_meta[c.number_of_peaks] = meta.getint(layer, 'npeaks')
+    im_meta[c.image_width] = meta.getint(layer, 'width')
+    im_meta[c.image_height] = meta.getint(layer, 'height')
+    im_meta[c.camera_gain] = meta.getfloat(layer, 'gain')
+    im_meta[c.camera_exposure] = meta.getfloat(layer, 'exposure time (ms)')
+    im_meta[c.cfa_pattern_attribute] = str(
             BayerPattern(meta.getint(layer, 'bayer pattern')))
-    im_meta['index'] = meta.getint(layer, 'index')
-    im_meta['wavelength'] = parse_peakmeta(meta.get(layer, 'wavelengths'))
-    im_meta['fwhm'] = parse_peakmeta(meta.get(layer, 'fwhms'))
-    im_meta['setpoint'] = parse_setpoints(meta.get(layer, 'setpoints'))
-    im_meta['sinv value'] = parse_sinvs(meta.get(layer, 'sinvs'))
+    im_meta[c.image_index] = meta.getint(layer, 'index')
+    im_meta[c.wavelength_data] = parse_peakmeta(meta.get(layer, 'wavelengths'))
+    im_meta[c.fwhm_data] = parse_peakmeta(meta.get(layer, 'fwhms'))
+    im_meta[c.setpoint_data] = parse_setpoints(meta.get(layer, 'setpoints'))
+    im_meta[c.sinv_data] = parse_sinvs(meta.get(layer, 'sinvs'))
 
     return im_meta
 
@@ -55,16 +56,16 @@ def parse_image_meta(meta, layer):
 def parse_peakmeta(s):
     return xr.DataArray(
             parsevec(s),
-            dims=('peak'),
-            coords={'peak': [1, 2, 3]}
+            dims=(c.peak_coord),
+            coords={c.peak_coord: [1, 2, 3]}
             )
 
 
 def parse_setpoints(s):
     return xr.DataArray(
             parsevec(s),
-            dims=('setpoint_index'),
-            coords={'setpoint_index': ['SP1', 'SP2', 'SP3']}
+            dims=(c.setpoint_coord),
+            coords={c.setpoint_coord: ['SP1', 'SP2', 'SP3']}
             )
 
 
@@ -73,10 +74,10 @@ def parse_sinvs(s):
     vector = parsevec(s)
     return xr.DataArray(
             [vector[0:3], vector[3:6], vector[6:]],
-            dims=('peak', 'colour'),
+            dims=(c.peak_coord, c.colour_coord),
             coords={
-                'peak': [1, 2, 3],
-                'colour': ['R', 'G', 'B']}
+                c.peak_coord: [1, 2, 3],
+                c.colour_coord: ['R', 'G', 'B']}
             )
 
 
