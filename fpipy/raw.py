@@ -23,6 +23,7 @@ from enum import IntEnum
 import numpy as np
 import xarray as xr
 import colour_demosaicing as cdm
+from . import conventions as c
 
 
 def _cfa_to_dataset(
@@ -73,16 +74,16 @@ def _cfa_to_dataset(
     """
 
     return xr.Dataset(
-        coords={'peak': [1, 2, 3],
-                'setpoint': [1, 2, 3],
-                'rgb': ['R', 'G', 'B']},
+        coords={c.peak_coord: [1, 2, 3],
+                c.setpoint_coord: [1, 2, 3],
+                c.colour_coord: ['R', 'G', 'B']},
 
-        data_vars={'cfa': cfa,
-                   'npeaks': npeaks,
-                   'wavelength': wavelength,
-                   'fwhm': fwhm,
-                   'setpoints': setpoints,
-                   'sinvs': sinvs},
+        data_vars={c.cfa_data: cfa,
+                   c.npeaks: npeaks,
+                   c.wavelength_data: wavelength,
+                   c.fwhm_data: fwhm,
+                   c.setpoint_data: setpoints,
+                   c.sinv_data: sinvs},
         attrs=attrs
         )
 
@@ -135,9 +136,13 @@ def cfa_stack_to_da(
 
     cfa_da = xr.DataArray(
             cfa,
-            dims=('index', 'y', 'x'),
-            coords={'index': index, 'y': y, 'x': x},
-            attrs={'bayer_pattern': str(pattern)}
+            dims=c.cfa_dims,
+            coords={
+                c.image_index: index,
+                c.height_coord: y,
+                c.width_coord: x,
+                },
+            attrs={c.cfa_pattern_attribute: str(pattern)}
             )
     return cfa_da
 
@@ -204,7 +209,7 @@ def subtract_dark(
         data,
         dark,
         data_var=None,
-        dc_attr='includes_dark_current'):
+        dc_attr=c.dc_included_attr):
     """Subtracts dark current reference from other image layers.
 
     Subtracts a dark reference frame from all the layers in the given data
@@ -318,6 +323,9 @@ def demosaic(cfa, pattern, dm_method):
 
     return xr.DataArray(
         dm_alg(cfa, pattern_name),
-        dims=['y', 'x', 'rgb'],
-        coords={'y': cfa.y, 'x': cfa.x, 'rgb': ['R', 'G', 'B']},
+        dims=c.RGB_dims,
+        coords={
+            c.height_coord: cfa.y,
+            c.width_coord: cfa.x,
+            c.colour_coord: ['R', 'G', 'B']},
         attrs=cfa.attrs)
