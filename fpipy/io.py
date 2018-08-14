@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import configparser
 from .meta import parse_meta_to_ds
-
+from . import conventions as c
 
 def read_calibration(calibfile):
     """Read calibration data from a CSV file and return an `xr.Dataset`."""
@@ -109,21 +109,21 @@ def read_ENVI_cfa(filepath):
     if ds.attrs.pop('dark layer included'):
         dark = xr.DataArray(
                 envi.values[0, ::],
-                dims=('y', 'x'),
-                coords={'y': envi['y'], 'x': envi['x']},
+                dims=c.dark_ref_dims,
+                coords={c.height_coord: envi['y'], c.width_coord: envi['x']},
                 name='Dark reference'
                 )
         cfa_data = envi.values[1:, ::]
-        # Assume that if a dark reference is included,
-        # it has not yet been removed from the data.
-        ds.attrs['includes_dark_current'] = True
     else:
         dark = None
         cfa_data = envi.values
 
-    ds['cfa'] = (['index', 'y', 'x'], cfa_data)
+    ds[c.cfa_data] = (c.cfa_dims, cfa_data)
 
     if dark is not None:
-        ds['dark'] = dark
+        # Assume that if a dark reference is included,
+        # it has not yet been removed from the data.
+        ds[c.cfa_data].attrs[c.dc_included_attr] = True
+        ds[c.dark_reference_data] = dark
 
     return ds

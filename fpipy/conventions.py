@@ -26,6 +26,9 @@ colour_coord = 'colour'
 cfa_data = 'cfa'
 """DataArray containing a stack of CFA images."""
 
+dark_reference_data = 'dark'
+"""DataArray containing a dark current reference."""
+
 wavelength_data = 'wavelength'
 """Passband center wavelength values."""
 
@@ -49,6 +52,9 @@ width_coord = 'x'
 
 cfa_dims = (image_index, height_coord, width_coord)
 """Convention for CFA image stacks (including mixed bands in each layer of data)."""
+
+dark_ref_dims = (height_coord, width_coord)
+"""Convention for dark reference image dimensions."""
 
 radiance_dims = (band_index, height_coord, width_coord)
 """Convention for radiance image stacks."""
