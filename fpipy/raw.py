@@ -209,26 +209,21 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
 
     def process_layer(layer):
         rgb = demosaic(
-                layer[c.cfa_data],
-                str(layer[c.cfa_pattern_attribute].values),
+                layer[c.cfa_data].squeeze(),
+                str(layer[c.cfa_pattern_attribute].values[0]),
                 dm_method
                 )
 
-        def calc_radiance(data):
-            rad = data[c.sinv_data].dot(rgb) / data[c.camera_exposure]
-            rad[c.wavelength_data] = data[c.wavelength_data]
-            return rad
-
-        radiance = layer.where(
-                layer[c.peak_coord] <= layer[c.number_of_peaks],
-                drop=True
-                ).groupby(c.peak_coord, squeeze=True).apply(calc_radiance)
-        radiance.drop(c.peak_coord)
+        radiance = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
         return radiance
 
-    ds = dataset.groupby(c.image_index).apply(process_layer)
-#    ds = ds.sortby(c.wavelength_data)
-    return ds
+    ds = dataset.where(
+                dataset[c.peak_coord] <= dataset[c.number_of_peaks],
+                drop=True
+                ).set_index(**{c.band_index: (c.image_index, c.peak_coord)})
+
+    return ds.groupby(c.wavelength_data).apply(process_layer).sortby(c.wavelength_data)
+
 
 def subtract_dark(
         data,
