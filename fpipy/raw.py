@@ -223,7 +223,8 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
 
         radiance = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
         return radiance
-
+    # groupby does not (yet) function as expected
+    # https://github.com/pydata/xarray/issues/1600
     return dataset.where(
             dataset[c.peak_coord] <= dataset[c.number_of_peaks],
             drop=True
