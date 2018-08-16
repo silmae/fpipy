@@ -39,21 +39,21 @@ def read_calibration(calibfile):
     ds[c.wavelength_data] = xr.DataArray(
         df[wlcols],
         dims=(c.image_index, c.peak_coord),
-        coords={c.image_index: ds.index, c.peak_coord: ds.peak_index}
+        coords={c.image_index: ds[c.image_index], c.peak_coord: ds[c.peak_coord]}
         )
 
     ds[c.fwhm_data] = xr.DataArray(
         df[fwhmcols],
         dims=(c.image_index, c.peak_coord),
-        coords={c.image_index: ds.index, c.peak_coord: ds.peak_index}
+        coords={c.image_index: ds[c.image_index], c.peak_coord: ds[c.peak_coord]}
         )
 
     ds[c.sinv_data] = xr.concat(
         [xr.DataArray(df[sinvcols[k*3:k*3+3]],
             dims=(c.image_index, c.peak_coord),
             coords={
-                c.image_index: ds.index,
-                c.peak_coord: ds.peak_index,
+                c.image_index: ds[c.image_index],
+                c.peak_coord: ds[c.peak_coord],
                 c.colour_coord: c})
          for k,c in enumerate('RGB')],
         dim=c.colour_coord)
