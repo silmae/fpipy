@@ -54,8 +54,8 @@ def read_calibration(calibfile):
             coords={
                 c.image_index: ds[c.image_index],
                 c.peak_coord: ds[c.peak_coord],
-                c.colour_coord: c})
-         for k,c in enumerate('RGB')],
+                c.colour_coord: colour})
+         for k,colour in enumerate('RGB')],
         dim=c.colour_coord)
 
     return ds
