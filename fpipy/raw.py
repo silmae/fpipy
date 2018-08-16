@@ -226,8 +226,8 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
 
     ds = dataset.where(
                 dataset[c.peak_coord] <= dataset[c.number_of_peaks],
-                drop=True)
-#                ).set_index(**{c.band_index: (c.image_index, c.peak_coord)})
+                drop=True
+                ).stack(**{c.band_index: (c.image_index, c.peak_coord)})
 
     return ds.groupby(
             c.wavelength_data
