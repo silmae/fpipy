@@ -19,6 +19,7 @@ Calculating radiances from raw data and plotting them can be done as follows::
     radiance.sel(wavelength=600, method='nearest').plot()
 """
 
+from warnings import warn
 from enum import IntEnum
 import numpy as np
 import xarray as xr
@@ -208,6 +209,12 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 def raw_to_radiance2(dataset, dm_method='bilinear'):
 
     def process_layer(layer):
+        if c.dc_included_attr in layer[c.cfa_data].attrs:
+            if layer[c.cfa_data].attrs[c.dc_included_attr]:
+                warn(UserWarning(
+                    'CFA data still has "{}" set to True!'.format(
+                        c.dc_included_attr)))
+
         rgb = demosaic(
                 layer[c.cfa_data].squeeze(),
                 str(layer[c.cfa_pattern_attribute].values[0]),
@@ -265,24 +272,18 @@ def subtract_dark(
     """
 
     if data_var is None:
-        try:
-            if not data[dc_attr]:
-                raise UserWarning(
-                    'Data already has {} set to false!'.format(dc_attr))
-        except:
-            pass
+        if dc_attr in data.attrs and not data.attrs[dc_attr]:
+                warn(UserWarning(
+                    'Data already has {} set to false!'.format(dc_attr)))
 
         data = _subtract_dark(data, dark)
         data.attrs[dc_attr] = False
 
     else:
-        try:
-            if not data[data_var].attrs[dc_attr]:
-                raise UserWarning(
-                    'Data already has {} set to false!'.format(dc_attr))
-        except:
-            pass
-
+        if (dc_attr in data[data_var].attrs and
+           not data[data_var].attrs[dc_attr]):
+                warn(UserWarning(
+                    'Data already has {} set to false!'.format(dc_attr)))
         data[data_var] = _subtract_dark(data[data_var], dark)
         data[data_var].attrs[dc_attr] = False
 
