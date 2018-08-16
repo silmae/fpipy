@@ -16,15 +16,15 @@ def read_calibration(calibfile):
     df = pd.read_csv(calibfile, delimiter='\t', index_col='index')
 
     ds = xr.Dataset()
-    ds.coords['index'] = xr.DataArray(df.index, dims=('index'))
+    ds.coords[c.image_index] = xr.DataArray(df.index, dims=(c.image_index))
 
-    ds['npeaks'] = xr.DataArray(df['Npeaks'], dims=('index'))
+    ds[c.number_of_peaks] = xr.DataArray(df['Npeaks'], dims=(c.image_index))
 
     spcols = [col for col in df.columns if 'SP' in col]
     if spcols:
-        ds['setpoint'] = xr.DataArray(
+        ds[c.setpoint_data] = xr.DataArray(
             df[spcols],
-            dims=('index', 'setpoint_index')
+            dims=(c.image_index, c.setpoint_coord)
             )
     else:
         raise UserWarning('Setpoint information not found, omitting.')
@@ -33,26 +33,30 @@ def read_calibration(calibfile):
     fwhmcols = [col for col in df.columns if 'FWHM' in col]
     sinvcols = [col for col in df.columns if 'Sinv' in col]
 
-    ds.coords['peak_index'] = ('peak_index', [1, 2, 3])
+    ds.coords[c.peak_coord] = (c.peak_coord, [1, 2, 3])
 
 
-    ds['wavelength'] = xr.DataArray(
+    ds[c.wavelength_data] = xr.DataArray(
         df[wlcols],
-        dims=('index', 'peak_index'),
-        coords={'index': ds.index, 'peak_index': ds.peak_index}
+        dims=(c.image_index, c.peak_coord),
+        coords={c.image_index: ds.index, c.peak_coord: ds.peak_index}
         )
 
-    ds['fwhm'] = xr.DataArray(
+    ds[c.fwhm_data] = xr.DataArray(
         df[fwhmcols],
-        dims=('index', 'peak_index'),
-        coords={'index': ds.index, 'peak_index': ds.peak_index}
+        dims=(c.image_index, c.peak_coord),
+        coords={c.image_index: ds.index, c.peak_coord: ds.peak_index}
         )
 
-    ds['sinv'] = xr.concat(
-        [xr.DataArray(df[sinvcols[k*3:k*3+3]], dims=('index', 'peak_index'),
-            coords={'index': ds.index, 'peak_index': ds.peak_index, 'colour': c})
+    ds[c.sinv_data] = xr.concat(
+        [xr.DataArray(df[sinvcols[k*3:k*3+3]],
+            dims=(c.image_index, c.peak_coord),
+            coords={
+                c.image_index: ds.index,
+                c.peak_coord: ds.peak_index,
+                c.colour_coord: c})
          for k,c in enumerate('RGB')],
-        dim='colour')
+        dim=c.colour_coord)
 
     return ds
 
