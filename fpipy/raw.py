@@ -224,12 +224,12 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
         radiance = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
         return radiance
 
-    ds = dataset.where(
-                dataset[c.peak_coord] <= dataset[c.number_of_peaks],
-                drop=True
-                ).stack(**{c.band_index: (c.image_index, c.peak_coord)})
-
-    return ds.groupby(
+    return dataset.where(
+            dataset[c.peak_coord] <= dataset[c.number_of_peaks],
+            drop=True
+            ).stack(
+                **{c.band_index: (c.image_index, c.peak_coord)}
+            ).groupby(
             c.wavelength_data
             ).apply(process_layer).sortby(c.wavelength_data)
 
