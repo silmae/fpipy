@@ -10,7 +10,7 @@ import fpipy.raw as fpr
 import numpy as np
 from numpy.testing import assert_array_equal
 from fpipy.data import house_raw
-
+import fpipy.conventions as c
 
 @pytest.fixture
 def raw():
@@ -28,7 +28,11 @@ def test_radiance_calculation_passes(raw):
 
 
 def test_subtract_dark_rollover(raw):
-    assert np.all(fpr.subtract_dark(raw.cfa) <= raw.cfa)
+    assert np.all(
+            fpr.subtract_dark(
+                raw[c.cfa_data],
+                raw[c.dark_reference_data])
+            <= raw[c.cfa_data])
 
 
 def test_cfa_stack_to_da_required_params():
