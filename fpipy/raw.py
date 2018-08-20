@@ -221,28 +221,37 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
                 drop=True
             ).groupby(
                 c.band_index
-            ).apply(process_layer).sortby(c.wavelength_data)
+            ).apply(process_layer)
 
 
 def process_layer(layer, dm_method='bilinear'):
-    if (c.dc_included_attr in layer[c.cfa_data].attrs and
-       layer[c.cfa_data].attrs[c.dc_included_attr]):
-        warn(UserWarning(
-            'CFA data still has "{}" set to True!'.format(
-                c.dc_included_attr)))
 
     if c.cfa_pattern_attribute in layer[c.cfa_data].attrs:
         pattern = str(layer[c.cfa_data].attrs[c.cfa_pattern_attribute])
     else:
         pattern = str(layer[c.cfa_pattern_attribute].values)
 
+    if c.camera_exposure in layer[c.cfa_data].attrs:
+        exposure = layer.attrs[c.camera_exposure]
+    else:
+        exposure = layer[c.camera_exposure].values
+
+    layer[c.cfa_data] = subtract_dark(layer[c.cfa_data], layer[c.dark_reference_data])
+
     rgb = demosaic(
-            layer[c.cfa_data].squeeze(),
+            layer[c.cfa_data],
             pattern,
             dm_method
             )
 
-    layer[c.radiance_data] = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
+    layer[c.radiance_data] = layer[c.sinv_data].dot(rgb) / exposure
+    layer = layer.drop([
+        c.cfa_data,
+        c.dark_reference_data,
+        c.sinv_data,
+        c.colour_coord,
+        c.cfa_pattern_attribute
+        ])
     return layer
 
 
