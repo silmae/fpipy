@@ -23,6 +23,9 @@ sinv_data = 'sinvs'
 colour_coord = 'colour'
 """Colour coordinate for values indexed w.r.t. CFA colours."""
 
+radiance_data = 'radiance'
+"""DataArray containing a stack of radiance images."""
+
 cfa_data = 'cfa'
 """DataArray containing a stack of CFA images."""
 

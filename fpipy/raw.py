@@ -214,32 +214,36 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
 
 def raw_to_radiance2(dataset, dm_method='bilinear'):
+    dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
 
-    def process_layer(layer):
-        if c.dc_included_attr in layer[c.cfa_data].attrs:
-            if layer[c.cfa_data].attrs[c.dc_included_attr]:
-                warn(UserWarning(
-                    'CFA data still has "{}" set to True!'.format(
-                        c.dc_included_attr)))
-
-        rgb = demosaic(
-                layer[c.cfa_data].squeeze(),
-                str(layer[c.cfa_pattern_attribute].values[0]),
-                dm_method
-                )
-
-        radiance = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
-        return radiance
-    # groupby does not (yet) function as expected
-    # https://github.com/pydata/xarray/issues/1600
     return dataset.where(
-            dataset[c.peak_coord] <= dataset[c.number_of_peaks],
-            drop=True
-            ).stack(
-                **{c.band_index: (c.image_index, c.peak_coord)}
+                dataset[c.peak_coord] <= dataset[c.number_of_peaks],
+                drop=True
             ).groupby(
-            c.wavelength_data
+                c.band_index
             ).apply(process_layer).sortby(c.wavelength_data)
+
+
+def process_layer(layer, dm_method='bilinear'):
+    if (c.dc_included_attr in layer[c.cfa_data].attrs and
+       layer[c.cfa_data].attrs[c.dc_included_attr]):
+        warn(UserWarning(
+            'CFA data still has "{}" set to True!'.format(
+                c.dc_included_attr)))
+
+    if c.cfa_pattern_attribute in layer[c.cfa_data].attrs:
+        pattern = str(layer[c.cfa_data].attrs[c.cfa_pattern_attribute])
+    else:
+        pattern = str(layer[c.cfa_pattern_attribute].values)
+
+    rgb = demosaic(
+            layer[c.cfa_data].squeeze(),
+            pattern,
+            dm_method
+            )
+
+    layer[c.radiance_data] = layer[c.sinv_data].dot(rgb) / layer[c.camera_exposure]
+    return layer
 
 
 def subtract_dark(
