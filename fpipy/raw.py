@@ -92,6 +92,7 @@ def _cfa_to_dataset(
 def cfa_stack_to_da(
         cfa,
         pattern,
+        includes_dark_current,
         index=None,
         x=None,
         y=None,
@@ -106,6 +107,9 @@ def cfa_stack_to_da(
 
     pattern: str or BayerPattern
         Bayer filter pattern of the camera CFA.
+
+    includes_dark_current: bool
+        Whether or not the data values include dark current.
 
     index: array-like, optional
         1-d array of unique indices identifying settings used for each image.
@@ -134,7 +138,10 @@ def cfa_stack_to_da(
 
     if y is None:
         y = np.arange(0, cfa.shape[1]) + 0.5
-
+    attrs = {
+            c.cfa_pattern_attribute: str(pattern),
+            c.dc_included_attr: int(includes_dark_current),
+            }
     cfa_da = xr.DataArray(
             cfa,
             dims=c.cfa_dims,
@@ -143,7 +150,7 @@ def cfa_stack_to_da(
                 c.height_coord: y,
                 c.width_coord: x,
                 },
-            attrs={c.cfa_pattern_attribute: str(pattern)}
+            attrs=attrs,
             )
     return cfa_da
 
