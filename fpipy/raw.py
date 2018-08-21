@@ -215,13 +215,10 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
 def raw_to_radiance2(dataset, dm_method='bilinear'):
     dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
-
-    return dataset.where(
-                dataset[c.peak_coord] <= dataset[c.number_of_peaks],
-                drop=True
-            ).groupby(
-                c.band_index
-            ).apply(process_layer)
+    dataset = dataset.sel(
+            **{c.band_index: dataset[c.peak_coord] <= dataset[c.number_of_peaks]}
+                )
+    return dataset.groupby(c.band_index).apply(process_layer)
 
 
 def process_layer(layer, dm_method='bilinear'):
@@ -236,29 +233,23 @@ def process_layer(layer, dm_method='bilinear'):
     else:
         exposure = layer[c.camera_exposure].values
 
-    layer[c.cfa_data] = subtract_dark(layer[c.cfa_data], layer[c.dark_reference_data])
-
     rgb = demosaic(
-            layer[c.cfa_data],
+            subtract_dark(
+                layer[c.cfa_data],
+                layer[c.dark_reference_data]
+            ),
             pattern,
             dm_method
             )
 
     layer[c.radiance_data] = layer[c.sinv_data].dot(rgb) / exposure
-    layer = layer.drop([
-        c.cfa_data,
-        c.dark_reference_data,
-        c.sinv_data,
-        c.colour_coord,
-        c.cfa_pattern_attribute
-        ])
+    del(rgb)
     return layer
 
 
 def subtract_dark(
         data,
         dark,
-        data_var=None,
         dc_attr=c.dc_included_attr):
     """Subtracts dark current reference from other image layers.
 
@@ -274,10 +265,6 @@ def subtract_dark(
     dark : array-like
         Dark current reference measurement.
 
-    data_var : str, optional
-        If given, attempts to operate only on data[data_var] instead of
-        data.
-
     dc_attr : str, optional
         Attribute to use for checking whether the data includes dark current,
         and to set to False afterwards.
@@ -289,26 +276,15 @@ def subtract_dark(
         Data from which the dark current reference has been subtracted.
         Resulting array will have dtype float64, with negative values
         clamped to 0.
-        If an included dark reference was supplied, it is removed from the
-        result.
 
     """
 
-    if data_var is None:
-        if dc_attr in data.attrs and not data.attrs[dc_attr]:
-                warn(UserWarning(
-                    'Data already has {} set to false!'.format(dc_attr)))
+    if dc_attr in data.attrs and not data.attrs[dc_attr]:
+            warn(UserWarning(
+                'Data already has {} set to false!'.format(dc_attr)))
 
-        data = _subtract_dark(data, dark)
-        data.attrs[dc_attr] = False
-
-    else:
-        if (dc_attr in data[data_var].attrs and
-           not data[data_var].attrs[dc_attr]):
-                warn(UserWarning(
-                    'Data already has {} set to false!'.format(dc_attr)))
-        data[data_var] = _subtract_dark(data[data_var], dark)
-        data[data_var].attrs[dc_attr] = False
+    data = xr.apply_ufunc(_subtract_dark, data, dark)
+    data.attrs[dc_attr] = False
 
     return data
 
