@@ -101,6 +101,7 @@ def read_ENVI_cfa(filepath):
     hdtfile = base + '.hdt'
 
     envi = xr.open_rasterio(datfile)
+    envi.load()
     envi.attrs.clear()  # Drop irrelevant attributes
 
     if 'fwhm' in envi.coords:
@@ -111,23 +112,17 @@ def read_ENVI_cfa(filepath):
     ds = read_hdt(hdtfile)
 
     if ds.attrs.pop('dark layer included'):
-        dark = xr.DataArray(
+        ds[c.dark_reference_data] = xr.DataArray(
                 envi.values[0, ::],
                 dims=c.dark_ref_dims,
                 coords={c.height_coord: envi['y'], c.width_coord: envi['x']},
                 name='Dark reference'
                 )
-        cfa_data = envi.values[1:, ::]
-    else:
-        dark = None
-        cfa_data = envi.values
-
-    ds[c.cfa_data] = (c.cfa_dims, cfa_data)
-
-    if dark is not None:
-        # Assume that if a dark reference is included,
-        # it has not yet been removed from the data.
+        ds[c.cfa_data] = (c.cfa_dims, envi.values[1:, ::])
         ds[c.cfa_data].attrs[c.dc_included_attr] = True
-        ds[c.dark_reference_data] = dark
+    else:
+        # Note that we do not no whether or not the data still includes dark
+        # current (only that there was no reference).
+        ds[c.cfa_data] = (c.cfa_dims, envi.values)
 
     return ds
