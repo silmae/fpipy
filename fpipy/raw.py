@@ -217,9 +217,13 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
 def raw_to_radiance2(dataset, dm_method='bilinear'):
     dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
-    return dataset.sel(
+    dataset = dataset.set_coords([c.wavelength_data, c.fwhm_data])
+    radiance = dataset.sel(
         **{c.band_index: dataset[c.peak_coord] <= dataset[c.number_of_peaks]}
         ).groupby(c.band_index).apply(process_layer)
+    radiance = radiance.to_dataset(name=c.radiance_data)
+    radiance = radiance.reset_coords([c.wavelength_data, c.fwhm_data])
+    return radiance
 
 
 def process_layer(layer, dm_method='bilinear'):
@@ -243,9 +247,9 @@ def process_layer(layer, dm_method='bilinear'):
             dm_method
             )
 
-    layer[c.radiance_data] = layer[c.sinv_data].dot(rgb) / exposure
+    rad = layer[c.sinv_data].dot(rgb) / exposure
     del(rgb)
-    return layer
+    return rad
 
 
 def subtract_dark(
