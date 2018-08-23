@@ -228,7 +228,7 @@ def process_layer(layer, dm_method='bilinear'):
         pattern = str(layer[c.cfa_pattern_attribute].values)
 
     if c.camera_exposure in layer[c.cfa_data].attrs:
-        exposure = layer.attrs[c.camera_exposure]
+        exposure = layer[c.cfa_data].attrs[c.camera_exposure]
     else:
         exposure = layer[c.camera_exposure].values
 
