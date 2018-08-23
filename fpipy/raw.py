@@ -28,6 +28,7 @@ from . import conventions as c
 
 
 def _cfa_to_dataset(
+        *,
         cfa,
         dark,
         npeaks,
@@ -90,6 +91,7 @@ def _cfa_to_dataset(
 
 
 def cfa_stack_to_da(
+        *,
         cfa,
         pattern,
         includes_dark_current,
