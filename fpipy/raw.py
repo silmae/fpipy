@@ -216,6 +216,9 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
 
 def raw_to_radiance2(dataset, dm_method='bilinear'):
+    def process_layer(layer):
+        return _raw_to_radiance(layer, dm_method)
+
     dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
     dataset = dataset.set_coords([c.wavelength_data, c.fwhm_data])
     radiance = dataset.sel(
@@ -226,8 +229,8 @@ def raw_to_radiance2(dataset, dm_method='bilinear'):
     return radiance
 
 
-def process_layer(layer, dm_method='bilinear'):
-
+def _raw_to_radiance(layer, dm_method):
+    """Calculate radiance given a single raw image containing """
     if c.cfa_pattern_attribute in layer[c.cfa_data].attrs:
         pattern = str(layer[c.cfa_data].attrs[c.cfa_pattern_attribute])
     else:
