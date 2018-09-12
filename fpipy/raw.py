@@ -404,11 +404,11 @@ def demosaic(cfa, pattern, dm_method):
         }
     dm_alg = dm_methods[dm_method]
 
-    return xr.DataArray(
-        dm_alg(cfa, pattern_name),
-        dims=c.RGB_dims,
-        coords={
-            c.height_coord: cfa.y,
-            c.width_coord: cfa.x,
-            c.colour_coord: ['R', 'G', 'B']},
-        attrs=cfa.attrs)
+    res = xr.apply_ufunc(
+        dm_alg,
+        cfa,
+        kwargs=dict(pattern=pattern_name),
+        input_core_dims=[(c.height_coord, c.width_coord)],
+        output_core_dims=[(c.RGB_dims)])
+    res.coords[c.colour_coord] = ['R', 'G', 'B']
+    return res
