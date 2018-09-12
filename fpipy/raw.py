@@ -216,43 +216,97 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
 
 
 def raw_to_radiance2(dataset, dm_method='bilinear'):
-    def process_layer(layer):
-        return _raw_to_radiance(layer, dm_method)
 
+    # Subtract dark reference from the data
+    dataset[c.cfa_data] = subtract_dark(
+            dataset[c.cfa_data],
+            dataset[c.dark_reference_data]
+            )
+
+    # Workaround until xarray supports passing of positional parameters
+    def raw_to_rgb(raw):
+        return _raw_to_rgb(raw, dm_method)
+
+    # Demosaic each image
+    dataset[c.rgb_data] = dataset.groupby(
+            c.image_index
+            ).apply(raw_to_rgb)
+
+    # Create a new band coordinate and use it to select only existing peaks
     dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
-    dataset = dataset.set_coords([c.wavelength_data, c.fwhm_data])
-    radiance = dataset.sel(
+    dataset = dataset.sel(
         **{c.band_index: dataset[c.peak_coord] <= dataset[c.number_of_peaks]}
-        ).groupby(c.band_index).apply(process_layer)
-    radiance = radiance.to_dataset(name=c.radiance_data)
-    radiance = radiance.reset_coords([c.wavelength_data, c.fwhm_data])
-    return radiance
+        )
 
+    # Preserve other data by setting them as coordinates
+    preserved_data = [
+            c.wavelength_data,
+            c.fwhm_data,
+            c.camera_exposure,
+            c.camera_gain,
+            ]
+    dataset = dataset.set_coords([c for c in preserved_data if c in dataset])
 
-def _raw_to_radiance(layer, dm_method):
-    """Calculate radiance given a single raw image containing """
-    if c.cfa_pattern_attribute in layer[c.cfa_data].attrs:
-        pattern = str(layer[c.cfa_data].attrs[c.cfa_pattern_attribute])
+    # Calculate radiances from each RGB image
+    radiances = dataset.groupby(c.band_index).apply(_rgb_to_rad)
+    radiances = radiances.reset_coords(preserved_data)
+
+    # Sort by wavelengths and reassign band coordinate
+    radiances = radiances.sortby(c.wavelength_data)
+    radiances = radiances.assign_coords(
+            **{c.band_index: dataset[c.band_index]}
+            )
+    return radiances
+
+import gc
+def _raw_to_rgb(raw, dm_method):
+    """Demosaic a dataset of CFA data.
+
+    Parameters
+    ----------
+    raw: xr.Dataset
+        Dataset containing a single CFA image and Bayer pattern information.
+
+    Returns
+    -------
+    xr.DataArray
+        DataArray containing the demosaiced R, G and B layers.
+    """
+    if c.cfa_pattern_attribute in raw[c.cfa_data].attrs:
+        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_attribute])
     else:
-        pattern = str(layer[c.cfa_pattern_attribute].values)
-
-    if c.camera_exposure in layer[c.cfa_data].attrs:
-        exposure = layer[c.cfa_data].attrs[c.camera_exposure]
-    else:
-        exposure = layer[c.camera_exposure].values
+        pattern = str(raw[c.cfa_pattern_attribute].values)
 
     rgb = demosaic(
-            subtract_dark(
-                layer[c.cfa_data],
-                layer[c.dark_reference_data]
-            ),
+            raw[c.cfa_data],
             pattern,
             dm_method
             )
+    return rgb
 
-    rad = layer[c.sinv_data].dot(rgb) / exposure
-    del(rgb)
-    return rad
+
+def _rgb_to_rad(rgb):
+    """Calculate all possible radiance bands from a given RGB image.
+
+    Parameters
+    ----------
+    rgb: xr.DataSet
+        Dataset containing an RGB image, exposure and inversion information.
+
+    Returns
+    -------
+    radiance : xr.Dataset
+        Dataset containing radiance images for each passband peak.
+
+    """
+    if c.camera_exposure in rgb[c.rgb_data].attrs:
+        exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
+    else:
+        exposure = rgb[c.camera_exposure].values
+
+    radiance = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
+    radiance = radiance.to_dataset(name=c.radiance_data)
+    return radiance
 
 
 def subtract_dark(
