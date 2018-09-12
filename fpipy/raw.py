@@ -344,7 +344,7 @@ def subtract_dark(
     if dc_attr in data.attrs and not data.attrs[dc_attr]:
         warn(UserWarning(
             ('Data already has {} set to false,'
-             'skipping dark subtraction')).format(dc_attr))
+             'skipping dark subtraction').format(dc_attr)))
     else:
         data = xr.apply_ufunc(_subtract_dark, data, dark)
         data.attrs[dc_attr] = False
