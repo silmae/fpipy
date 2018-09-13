@@ -157,7 +157,7 @@ def cfa_stack_to_da(
     return cfa_da
 
 
-def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
+def raw_to_radiance(dataset):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -183,39 +183,6 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
         and with x, y, wavelength and fwhm as coordinates.
         Passes along relevant attributes from input dataset.
     """
-
-    layers = dataset.cfa
-
-    if pattern is None:
-        pattern = dataset.bayer_pattern
-
-    radiance = {}
-
-    for layer in layers:
-        demo = demosaic(layer, pattern, dm_method)
-
-        for n in range(1, dataset.npeaks.sel(band=layer.band).values + 1):
-            data = dataset.sel(band=layer.band, peak=n)
-
-            rad = data.sinvs.dot(demo)/data.exposure
-
-            rad.coords['wavelength'] = data.wavelength
-            rad.coords['fwhm'] = data.fwhm
-            rad = rad.drop('peak')
-            rad = rad.drop('band')
-            radiance[float(rad.wavelength)] = rad
-
-    radiance = xr.concat([radiance[key] for key in sorted(radiance)],
-                         dim='wavelength',
-                         coords=['wavelength', 'fwhm'])
-    radiance.attrs = {key: value for key, value in dataset.attrs.items()
-                      if key not in ['dark_layer_included', 'bayer_pattern']}
-    radiance.name = 'radiance'
-
-    return radiance
-
-
-def raw_to_radiance2(dataset):
 
     radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
     radiances = radiances.stack(
