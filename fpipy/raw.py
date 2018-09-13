@@ -184,14 +184,22 @@ def raw_to_radiance(dataset):
         Passes along relevant attributes from input dataset.
     """
 
+    # Calculate radiances
     radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
+
+    # Create a band coordinate (MultiIndex) and drop nonexistant indices
     radiances = radiances.stack(
             **{c.band_index: (c.image_index, c.peak_coord)}
             )
     radiances = radiances.sel(
         **{c.band_index:
             radiances[c.peak_coord] <= radiances[c.number_of_peaks]}
-        ).sortby(c.wavelength_data)
+        )
+    # Sort by wavelength
+    radiances = radiances.sortby(c.wavelength_data)
+
+    # Replace MultiIndex with regular indexing and move coordinates
+    # to variables for consistent semantics
     radiances = radiances.reset_index(c.band_index)
     radiances = radiances.assign_coords(
             **{c.band_index: radiances[c.band_index]}
