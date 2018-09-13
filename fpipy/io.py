@@ -10,6 +10,7 @@ import configparser
 from .meta import parse_meta_to_ds
 from . import conventions as c
 
+
 def read_calibration(calibfile):
     """Read calibration data from a CSV file and return an `xr.Dataset`."""
 
@@ -35,27 +36,33 @@ def read_calibration(calibfile):
 
     ds.coords[c.peak_coord] = (c.peak_coord, [1, 2, 3])
 
-
     ds[c.wavelength_data] = xr.DataArray(
         df[wlcols],
         dims=(c.image_index, c.peak_coord),
-        coords={c.image_index: ds[c.image_index], c.peak_coord: ds[c.peak_coord]}
+        coords={
+            c.image_index: ds[c.image_index],
+            c.peak_coord: ds[c.peak_coord]
+            }
         )
 
     ds[c.fwhm_data] = xr.DataArray(
         df[fwhmcols],
         dims=(c.image_index, c.peak_coord),
-        coords={c.image_index: ds[c.image_index], c.peak_coord: ds[c.peak_coord]}
+        coords={
+            c.image_index: ds[c.image_index],
+            c.peak_coord: ds[c.peak_coord]
+            }
         )
 
     ds[c.sinv_data] = xr.concat(
         [xr.DataArray(df[sinvcols[k*3:k*3+3]],
-            dims=(c.image_index, c.peak_coord),
-            coords={
-                c.image_index: ds[c.image_index],
-                c.peak_coord: ds[c.peak_coord],
-                c.colour_coord: colour})
-         for k,colour in enumerate('RGB')],
+         dims=(c.image_index, c.peak_coord),
+         coords={
+             c.image_index: ds[c.image_index],
+             c.peak_coord: ds[c.peak_coord],
+             c.colour_coord: colour
+             })
+         for k, colour in enumerate('RGB')],
         dim=c.colour_coord)
 
     return ds
