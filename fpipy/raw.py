@@ -215,74 +215,78 @@ def raw_to_radiance(dataset, pattern=None, dm_method='bilinear'):
     return radiance
 
 
-def raw_to_radiance2(dataset, dm_method='bilinear'):
+def raw_to_radiance2(dataset):
 
-    # Subtract dark reference from the data
-    dataset[c.cfa_data] = subtract_dark(
-            dataset[c.cfa_data],
-            dataset[c.dark_reference_data]
+    radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
+    radiances = radiances.stack(
+            **{c.band_index: (c.image_index, c.peak_coord)}
             )
-
-    # Workaround until xarray supports passing of positional parameters
-    def raw_to_rgb(raw):
-        return _raw_to_rgb(raw, dm_method)
-
-    # Demosaic each image
-    dataset[c.rgb_data] = dataset.groupby(
-            c.image_index
-            ).apply(raw_to_rgb)
-
-    # Create a new band coordinate and use it to select only existing peaks
-    dataset = dataset.stack(**{c.band_index: (c.image_index, c.peak_coord)})
-    dataset = dataset.sel(
-        **{c.band_index: dataset[c.peak_coord] <= dataset[c.number_of_peaks]}
-        )
-
-    # Preserve other data by setting them as coordinates
-    preserved_data = [
-            c.wavelength_data,
-            c.fwhm_data,
-            c.camera_exposure,
-            c.camera_gain,
-            ]
-    dataset = dataset.set_coords([c for c in preserved_data if c in dataset])
-
-    # Calculate radiances from each RGB image
-    radiances = dataset.groupby(c.band_index).apply(_rgb_to_rad)
-    radiances = radiances.reset_coords(preserved_data)
-
-    # Sort by wavelengths and reassign band coordinate
-    radiances = radiances.sortby(c.wavelength_data)
+    radiances = radiances.sel(
+        **{c.band_index:
+            radiances[c.peak_coord] <= radiances[c.number_of_peaks]}
+        ).sortby(c.wavelength_data)
+    radiances = radiances.reset_index(c.band_index)
     radiances = radiances.assign_coords(
-            **{c.band_index: dataset[c.band_index]}
+            **{c.band_index: radiances[c.band_index]}
+            )
+    radiances = radiances.to_dataset(name=c.radiance_data)
+    radiances = radiances.reset_coords(
+            [coord for coord in radiances.coords if coord not in
+                c.radiance_dims]
             )
     return radiances
 
-import gc
+
+def _raw_to_rad(raw, dark=None, dm_method='bilinear'):
+    """Compute all passband peaks from given raw image data.
+
+    Parameters
+    ----------
+    raw : xr.Dataset
+        Dataset containing raw CFA data to be passed through
+        `subtract_dark`, `_raw_to_rgb` and `_rgb_to_rad`.
+
+    Returns
+    -------
+    res : xr.Dataset
+        Dataset containing radiance data as
+        `res[fpipy.conventions.radiance_data]`.
+    """
+    return raw.pipe(
+                subtract_dark, dark
+            ).pipe(
+                _raw_to_rgb, dm_method
+            ).pipe(
+                _rgb_to_rad
+            )
+
+
 def _raw_to_rgb(raw, dm_method):
     """Demosaic a dataset of CFA data.
 
     Parameters
     ----------
     raw: xr.Dataset
-        Dataset containing a single CFA image and Bayer pattern information.
+        Dataset containing a single CFA image and Bayer pattern information
+        either as variable/coordinate or an attribute.
 
     Returns
     -------
-    xr.DataArray
-        DataArray containing the demosaiced R, G and B layers.
+    res : xr.Dataset
+        Dataset containing the demosaiced R, G and B layers as res[c.rgb_data].
     """
     if c.cfa_pattern_attribute in raw[c.cfa_data].attrs:
         pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_attribute])
     else:
         pattern = str(raw[c.cfa_pattern_attribute].values)
 
-    rgb = demosaic(
+    raw[c.rgb_data] = demosaic(
             raw[c.cfa_data],
             pattern,
             dm_method
             )
-    return rgb
+
+    return raw
 
 
 def _rgb_to_rad(rgb):
@@ -304,40 +308,52 @@ def _rgb_to_rad(rgb):
     else:
         exposure = rgb[c.camera_exposure].values
 
+    # Preserve data by setting them as coordinates
+    preserved_data = [
+            c.wavelength_data,
+            c.fwhm_data,
+            c.number_of_peaks
+            ]
+    rgb = rgb.set_coords([c for c in preserved_data if c in rgb])
+
+    rgb = rgb.sel(
+        **{c.peak_coord: rgb[c.peak_coord] <= rgb[c.number_of_peaks]}
+        )
     radiance = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
-    radiance = radiance.to_dataset(name=c.radiance_data)
     return radiance
 
 
 def subtract_dark(
         data,
-        dark,
+        dark=None,
         dc_attr=c.dc_included_attr):
-    """Subtracts dark current reference from other image layers.
+    """Subtracts dark current reference from image data.
 
     Subtracts a dark reference frame from all the layers in the given data
-    and clamps any negative values in the result to zero.
+    and clamps any negative values in the result to zero. If the input data
+    already indicates it has had dark current subtracted (having
+    the attribute `fpipy.conventions.dc_included_attr` set to true), it
+    simply passes the data through and gives a UserWarning.
 
     Parameters
     ----------
-    data : xarray.DataArray or xarray.DataSet
-        Dataset containing the raw images (including dark current)
-        either directly (if DataArray) or as the given data_var.
+    data : xarray.DataSet
+        Dataset containing the raw images (including dark current).
 
-    dark : array-like
-        Dark current reference measurement.
+    dark : array-like, optional
+        Dark current reference measurement. If not given, tries to use
+        data[c.dark_reference_data].
 
     dc_attr : str, optional
         Attribute to use for checking whether the data includes dark current,
-        and to set to False afterwards.
-        Default: 'includes_dark_current'
+        and to set False afterwards. Default is
+        `fpipy.conventions.dc_included_attr`.
 
     Returns
     -------
-    refarray : xarray.DataArray or xarray.Dataset
+    refarray : xarray.Dataset
         Data from which the dark current reference has been subtracted.
-        Resulting array will have dtype float64, with negative values
-        clamped to 0.
+        Negative values are clamped to 0.
 
     """
 
@@ -346,7 +362,12 @@ def subtract_dark(
             ('Data already has {} set to false,'
              'skipping dark subtraction').format(dc_attr)))
     else:
-        data = xr.apply_ufunc(_subtract_dark, data, dark)
+        if dark is None:
+            dark = data[c.dark_reference_data]
+
+        data[c.cfa_data] = xr.apply_ufunc(
+                _subtract_clip, data[c.cfa_data], dark
+                )
         data.attrs[dc_attr] = False
 
     return data
