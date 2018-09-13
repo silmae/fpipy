@@ -352,10 +352,12 @@ def subtract_dark(
     return data
 
 
-def _subtract_dark(array, dark):
-    """Subtract dark from array and clip to non-negative values."""
-    result = array.astype(np.float64) - dark.astype(np.float64)
-    result.clip(min=0)
+def _subtract_clip(x, y):
+    """Subtract y from x and clip to non-negative values.
+
+    Retains numerical type of x and y without introducing underflows.
+    """
+    result = (x > y) * (x - y)
     return result
 
 
