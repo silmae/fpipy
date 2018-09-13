@@ -95,7 +95,7 @@ def main(argv):
         inputs = tqdm(inputs)
 
     for rawfile in inputs:
-        rad = fp.raw_to_radiance(fp.read_cfa(rawfile))
+        rad = fp.raw.raw_to_radiance(fp.read_ENVI_cfa(rawfile))
         bname = os.path.basename(rawfile)
         savecmd(rad, os.path.join(outdir, prefix + bname))
 
