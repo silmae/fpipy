@@ -27,7 +27,7 @@ import colour_demosaicing as cdm
 from . import conventions as c
 
 
-def _cfa_to_dataset(
+def _cfa_dataset(
         *,
         cfa,
         dark=None,
@@ -123,73 +123,6 @@ def _cfa_to_dataset(
         res = res.assign_coords(**{c.colour_coord: ['R', 'G', 'B']})
 
     return res
-
-
-def cfa_stack_to_da(
-        *,
-        cfa,
-        pattern,
-        includes_dark_current,
-        index=None,
-        x=None,
-        y=None,
-        ):
-    """Check metadata validity and form a DataArray from a stack of FPI images.
-
-    Parameters
-    ----------
-    cfa: np.ndarray
-        (n_indices, height, width) stack of CFA images taken through a
-        Fabry-Perot tunable filter.
-
-    pattern: str or BayerPattern
-        Bayer filter pattern of the camera CFA.
-
-    includes_dark_current: bool
-        Whether or not the data values include dark current.
-
-    index: array-like, optional
-        1-d array of unique indices identifying settings used for each image.
-        Defaults to a vector of integers from 0 to n_indices.
-
-    x: array-like, optional
-        1-D array of unique x coordinates.
-        Defaults to a vector of pixel centers from 0.5 to width - 0.5.
-
-    y: array-like, optional
-        1-D array of unique y coordinates.
-        Defaults to a vector of pixel centers from 0.5 to height - 0.5.
-
-
-    Returns
-    -------
-    xr.DataArray
-        `xr.DataArray` containing the CFA stack with labeled dimensions.
-    """
-
-    if index is None:
-        index = np.arange(0, cfa.shape[0])
-
-    if x is None:
-        x = np.arange(0, cfa.shape[2]) + 0.5
-
-    if y is None:
-        y = np.arange(0, cfa.shape[1]) + 0.5
-    attrs = {
-            c.cfa_pattern_data: str(pattern),
-            c.dc_included_attr: int(includes_dark_current),
-            }
-    cfa_da = xr.DataArray(
-            cfa,
-            dims=c.cfa_dims,
-            coords={
-                c.image_index: index,
-                c.height_coord: y,
-                c.width_coord: x,
-                },
-            attrs=attrs,
-            )
-    return cfa_da
 
 
 def raw_to_radiance(dataset):

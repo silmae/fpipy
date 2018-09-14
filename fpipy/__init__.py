@@ -11,4 +11,4 @@ import fpipy.simulate
 import fpipy.data
 import fpipy.meta
 from fpipy.io import read_hdt, read_ENVI_cfa
-from fpipy.raw import raw_to_radiance, demosaic, subtract_dark, cfa_stack_to_da
+from fpipy.raw import raw_to_radiance, demosaic, subtract_dark
