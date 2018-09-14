@@ -7,14 +7,13 @@ import pytest
 
 import numpy as np
 import xarray as xr
-from numpy.testing import assert_array_equal
 
 import fpipy.raw as fpr
 from fpipy.data import house_raw
 import fpipy.conventions as c
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def raw_ENVI():
     return house_raw()
 
