@@ -17,9 +17,6 @@ setpoint_coord = 'setpoint_index'
 setpoint_data = 'setpoint'
 """Values of the setpoints."""
 
-sinv_dims = (c.colour_coord, c.image_index, c.peak_coord)
-"""Convention for inversion coefficient dimensions."""
-
 sinv_data = 'sinvs'
 """Inversion coefficients for radiance calculation."""
 
@@ -78,3 +75,6 @@ radiance_dims = (band_index, height_coord, width_coord)
 
 RGB_dims = (height_coord, width_coord, colour_coord)
 """Convention for RGB images."""
+
+sinv_dims = (colour_coord, image_index, peak_coord)
+"""Convention for inversion coefficient dimensions."""
