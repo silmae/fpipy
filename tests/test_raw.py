@@ -19,43 +19,68 @@ def raw_ENVI():
 
 
 @pytest.fixture
-def raw():
+def metas(idxs):
+    # Number of peaks for each index
+    npeaks = np.tile([1, 2, 3], idxs + idxs % 3)[:idxs]
+
+    # distinct sinvs for adjacent indices
+    tmp = np.array([[[0, 0, 1],
+                     [0, 0, 0],
+                     [0, 0, 0]],
+                    [[0, 1, 0],
+                     [0, 1, 1],
+                     [0, 0, 0]],
+                    [[1, 0, 0],
+                     [1, 0, 1],
+                     [1, 1, 0]]])
+    sinvs = np.tile(tmp, (idxs + idxs % 3, 1, 1))[:idxs, :, :]
+
+    # Reasonable wavelengths for existing peaks
+    mask = np.array([[i < npeaks[n] for i in range(3)] for n in range(idxs)])
+    wls = np.zeros((idxs, 3))
+    wls.T.flat[mask.T.flatten()] = np.linspace(400, 1200, np.sum(npeaks))
+    return sinvs, npeaks, wls
+
+
+@pytest.fixture(
+        params=[
+            (1, 1, 1),
+            (2, 1, 1),
+            (1, 4, 4),
+            (2, 4, 4),
+            (4, 4, 4),
+            (8, 2, 4),
+            ])
+def raw(request):
+    b, x, y = request.param
+
+    sinvs, npeaks, wls = metas(b)
+    data = xr.DataArray(
+            np.kron(
+                np.arange(1, b+1, dtype=np.uint16).reshape(b, 1, 1),
+                np.ones((y, x), dtype=np.uint16)),
+            dims=c.cfa_dims,
+            attrs={c.dc_included_attr: True},
+            )
+
     raw = xr.Dataset(
         data_vars={
-            c.cfa_data: (
-                c.cfa_dims,
-                np.kron(
-                    np.arange(1, 4, dtype=np.uint16).reshape(3,1,1),
-                    np.ones((4,4), dtype=np.uint16))
-                ),
+            c.cfa_data: data,
             c.dark_reference_data: (
                 c.dark_ref_dims,
-                np.zeros((4,4), dtype=np.uint16)
+                np.zeros((y, x), dtype=np.uint16)
                 ),
-            c.number_of_peaks: (c.image_index, np.array([1, 2, 3])),
+            c.number_of_peaks: (c.image_index, npeaks),
             c.sinv_data: (
-                 (c.image_index, c.peak_coord, c.colour_coord),
-                 np.array([[[0,0,1],
-                            [0,0,0],
-                            [0,0,0]],
-                           [[0,1,0],
-                            [0,1,1],
-                            [0,0,0]],
-                           [[1,0,0],
-                            [1,0,1],
-                            [1,1,1]]])
+                (c.image_index, c.peak_coord, c.colour_coord),
+                sinvs
                 ),
-            c.cfa_pattern_attribute: 'RGGB',
+            c.cfa_pattern_data: 'RGGB',
             c.camera_exposure: 0.5,
-            c.wavelength_data: (
-                (c.image_index, c.peak_coord),
-                np.array([[100,   0,   0],
-                          [200, 300,   0],
-                          [400, 500, 600]], dtype=np.float64)
-                ),
+            c.wavelength_data: ((c.image_index, c.peak_coord), wls),
             },
         coords={
-            c.image_index: np.arange(3),
+            c.image_index: np.arange(b),
             c.peak_coord: np.array([1, 2, 3]),
             c.colour_coord: ['R', 'G', 'B'],
             }
