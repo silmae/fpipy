@@ -91,7 +91,7 @@ def _cfa_dataset(
         c.wavelength_data: ((c.image_index, c.peak_coord), wavelength),
         c.fwhm_data: ((c.image_index, c.peak_coord), fwhm),
         c.setpoint_data: ((c.image_index, c.setpoint_coord), setpoints),
-        c.sinv_data: ((c.image_index, c.peak_coord, c.colour_coord), sinvs),
+        c.sinv_data: (c.sinv_dims, sinvs),
         }
 
     if dark is not None:
