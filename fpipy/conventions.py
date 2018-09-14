@@ -50,7 +50,7 @@ camera_exposure = 'exposure'
 dc_included_attr = 'includes_dark_current'
 """Attribute indicating inclusion of dark current in the data."""
 
-cfa_pattern_attribute = 'bayer_pattern'
+cfa_pattern_data = 'bayer_pattern'
 """Attribute denoting the pattern (e.g. RGGB) of the colour filter array."""
 
 image_index = 'index'

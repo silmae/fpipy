@@ -30,41 +30,51 @@ from . import conventions as c
 def _cfa_to_dataset(
         *,
         cfa,
-        dark,
+        dark=None,
+        pattern,
         npeaks,
         wavelength,
         fwhm,
         setpoints,
         sinvs,
+        coords=None,
         attrs=None
         ):
     """Combine raw CFA data with metadata into an `xr.Dataset` object.
 
     Parameters
     ----------
-    cfa: xr.DataArray
+    cfa: array-like
         (n,y,x) array of colour filter array images with labeled dimensions
-        index, x and y.
+        index, x and y. If dark is supplied,
         See `cfa_stack_to_da`.
 
-    dark: xr.DataArray
+    dark: array-like, optional
+        Dark current reference data.
 
-    npeaks: xr.DataArray
+    pattern : BayerPattern or str or array-like
+        Bayer filter pattern of the sensor. May be an array if multiple
+        patterns are included in the data.
+
+    npeaks: array-like
         Number of separate passbands (peaks) for each index.
 
-    wavelength: xr.DataArray
+    wavelength: array-like
         Wavelengths corresponding to each peak for each index.
 
-    fwhm: xr.DataArray
+    fwhm: array-like
         FWHMs corresponding to each peak for each index.
 
-    setpoints: xr.DataArray
+    setpoints: array-like
         1st setpoints (voltage values sent to the PFPI driver)
         for each index.
 
-    sinvs: xr.DataArray
+    sinvs: array-like
         Inversion coefficients for radiance calculation corresponding
         to each index, peak and colour.
+
+    coords: dict, optional
+        Extra coordinates to add to the dataset.
 
     attrs: dict, optional
         Extra attributes to add to the dataset.
@@ -72,22 +82,47 @@ def _cfa_to_dataset(
     Returns
     -------
     xr.Dataset
-
+        Dataset with the given data and possible generated coordinates.
     """
+    data_vars = {
+        c.cfa_data: (c.cfa_dims, cfa),
+        c.cfa_pattern_data: (c.image_index, pattern),
+        c.number_of_peaks: (c.image_index, npeaks),
+        c.wavelength_data: ((c.image_index, c.peak_coord), wavelength),
+        c.fwhm_data: ((c.image_index, c.peak_coord), fwhm),
+        c.setpoint_data: ((c.image_index, c.setpoint_coord), setpoints),
+        c.sinv_data: ((c.image_index, c.peak_coord, c.colour_coord), sinvs),
+        }
 
-    return xr.Dataset(
-        coords={c.peak_coord: [1, 2, 3],
-                c.setpoint_coord: [1, 2, 3],
-                c.colour_coord: ['R', 'G', 'B']},
+    if dark is not None:
+        if c.dc_included_attr not in cfa.attrs:
+            raise(AttributeError(
+                ('CFA data must contain the `{}` attribute if dark '
+                 'current reference is supplied')))
 
-        data_vars={c.cfa_data: cfa,
-                   c.npeaks: npeaks,
-                   c.wavelength_data: wavelength,
-                   c.fwhm_data: fwhm,
-                   c.setpoint_data: setpoints,
-                   c.sinv_data: sinvs},
+        data_vars[c.dark_reference_data] = (c.dark_ref_dims, dark)
+
+    res = xr.Dataset(
+        data_vars=data_vars,
+        coords=coords,
         attrs=attrs
         )
+
+    if c.image_index not in res.coords:
+        res = res.assign_coords(**{c.image_index: np.arange(0, cfa.shape[0])})
+    if c.height_coord not in res.coords:
+        res = res.assign_coords(**{c.height_coord: np.arange(0, cfa.shape[1]) + 0.5})
+    if c.width_coord not in res.coords:
+        res = res.assign_coords(**{c.width_coord: np.arange(0, cfa.shape[2]) + 0.5})
+
+    if c.peak_coord not in res.coords:
+        res = res.assign_coords(**{c.peak_coord: [1, 2, 3]})
+    if c.setpoint_coord not in res.coords:
+        res = res.assign_coords(**{c.setpoint_coord: [1, 2, 3]})
+    if c.colour_coord not in res.coords:
+        res = res.assign_coords(**{c.colour_coord: ['R', 'G', 'B']})
+
+    return res
 
 
 def cfa_stack_to_da(
@@ -141,7 +176,7 @@ def cfa_stack_to_da(
     if y is None:
         y = np.arange(0, cfa.shape[1]) + 0.5
     attrs = {
-            c.cfa_pattern_attribute: str(pattern),
+            c.cfa_pattern_data: str(pattern),
             c.dc_included_attr: int(includes_dark_current),
             }
     cfa_da = xr.DataArray(
@@ -250,10 +285,10 @@ def _raw_to_rgb(raw, dm_method):
     res : xr.Dataset
         Dataset containing the demosaiced R, G and B layers as res[c.rgb_data].
     """
-    if c.cfa_pattern_attribute in raw[c.cfa_data].attrs:
-        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_attribute])
+    if c.cfa_pattern_data in raw[c.cfa_data].attrs:
+        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
     else:
-        pattern = str(raw[c.cfa_pattern_attribute].values)
+        pattern = str(raw[c.cfa_pattern_data].values)
 
     raw[c.rgb_data] = demosaic(
             raw[c.cfa_data],

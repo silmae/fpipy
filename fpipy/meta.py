@@ -42,7 +42,7 @@ def parse_image_meta(meta, layer):
     im_meta[c.image_height] = meta.getint(layer, 'height')
     im_meta[c.camera_gain] = meta.getfloat(layer, 'gain')
     im_meta[c.camera_exposure] = meta.getfloat(layer, 'exposure time (ms)')
-    im_meta[c.cfa_pattern_attribute] = str(
+    im_meta[c.cfa_pattern_data] = str(
             BayerPattern(meta.getint(layer, 'bayer pattern')))
     im_meta[c.image_index] = meta.getint(layer, 'index')
     im_meta[c.wavelength_data] = parse_peakmeta(meta.get(layer, 'wavelengths'))
