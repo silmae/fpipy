@@ -7,6 +7,7 @@ import pytest
 
 import numpy as np
 import xarray as xr
+import colour_demosaicing as cdm
 
 import fpipy.raw as fpr
 from fpipy.data import house_raw
@@ -43,40 +44,70 @@ def metas(idxs):
 
 
 @pytest.fixture(
-        params=[
-            (1, 1, 1),
-            (2, 1, 1),
-            (1, 4, 4),
-            (2, 4, 4),
-            (4, 4, 4),
-            (8, 2, 4),
-            ])
-def raw(request):
-    b, x, y = request.param
+    params=[
+        (1, 2, 2),
+        (2, 8, 4),
+        (3, 4, 8),
+        ])
+def size(request):
+    return request.param
 
+
+@pytest.fixture(
+    params=['GBRG', 'GRBG', 'BGGR', 'RGGB']
+    )
+def pattern(request):
+    return request.param
+
+
+@pytest.fixture
+def cfa(size, pattern):
+    b, y, x = size
+
+    masks = cdm.bayer.masks_CFA_Bayer((y, x), pattern)
+    cfa = np.zeros(size, dtype=np.uint16)
+    cfa[:, masks[0]] = 1  # Red
+    cfa[:, masks[1]] = 2  # Green
+    cfa[:, masks[2]] = 3  # Blue
+    return cfa
+
+
+@pytest.fixture(
+    params=[True, False]
+    )
+def dark(request, size):
+    _, y, x = size
+    return request.param, np.ones((y, x), dtype=np.uint16)
+
+
+@pytest.fixture(params=[1, 0.5])
+def exposure(request):
+    return request.param
+
+
+@pytest.fixture
+def raw(cfa, dark, pattern, exposure):
+    b, y, x = cfa.shape
     sinvs, npeaks, wls = metas(b)
+    dc_included, dark = dark
+
     data = xr.DataArray(
-            np.kron(
-                np.arange(1, b+1, dtype=np.uint16).reshape(b, 1, 1),
-                np.ones((y, x), dtype=np.uint16)),
+            cfa,
             dims=c.cfa_dims,
-            attrs={c.dc_included_attr: True},
+            attrs={c.dc_included_attr: dc_included},
             )
 
     raw = xr.Dataset(
         data_vars={
             c.cfa_data: data,
-            c.dark_reference_data: (
-                c.dark_ref_dims,
-                np.zeros((y, x), dtype=np.uint16)
-                ),
+            c.dark_reference_data: (c.dark_ref_dims, dark),
             c.number_of_peaks: (c.image_index, npeaks),
             c.sinv_data: (
                 (c.image_index, c.peak_coord, c.colour_coord),
                 sinvs
                 ),
-            c.cfa_pattern_data: 'RGGB',
-            c.camera_exposure: 0.5,
+            c.cfa_pattern_data: pattern,
+            c.camera_exposure: exposure,
             c.wavelength_data: ((c.image_index, c.peak_coord), wls),
             },
         coords={
