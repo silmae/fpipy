@@ -18,6 +18,11 @@ import fpipy.conventions as c
 def raw_ENVI():
     return house_raw()
 
+@pytest.fixture
+def wavelengths(b):
+    start, end = (400, 1200)
+    return np.linspace(start, end, b)
+
 
 @pytest.fixture
 def metas(idxs):
@@ -34,20 +39,20 @@ def metas(idxs):
                     [[1, 0, 0],
                      [1, 0, 1],
                      [1, 1, 0]]])
-    sinvs = np.tile(tmp, (idxs + idxs % 3, 1, 1))[:idxs, :, :]
+    sinvs = np.tile(tmp, (idxs // 3 + 1, 1, 1))[:idxs, :, :]
 
     # Reasonable wavelengths for existing peaks
     mask = np.array([[i < npeaks[n] for i in range(3)] for n in range(idxs)])
     wls = np.zeros((idxs, 3))
-    wls.T.flat[mask.T.flatten()] = np.linspace(400, 1200, np.sum(npeaks))
+    wls.T.flat[mask.T.flatten()] = wavelengths(np.sum(npeaks))
     return sinvs, npeaks, wls
 
 
 @pytest.fixture(
     params=[
         (1, 2, 2),
-        (2, 8, 4),
-        (3, 4, 8),
+        (2, 4, 4),
+        (3, 4, 8)
         ])
 def size(request):
     return request.param
@@ -68,7 +73,7 @@ def cfa(size, pattern):
     cfa = np.zeros(size, dtype=np.uint16)
     cfa[:, masks[0]] = 1  # Red
     cfa[:, masks[1]] = 2  # Green
-    cfa[:, masks[2]] = 3  # Blue
+    cfa[:, masks[2]] = 5  # Blue
     return cfa
 
 
