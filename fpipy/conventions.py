@@ -57,7 +57,7 @@ image_index = 'index'
 """Index number of the image in a given stack."""
 
 band_index = 'band'
-"""Index of a band (image or set of parameters corresponding to certain waveband)."""
+"""Index for wavelength band data."""
 
 image_width = 'width'
 image_height = 'height'
@@ -65,7 +65,7 @@ height_coord = 'y'
 width_coord = 'x'
 
 cfa_dims = (image_index, height_coord, width_coord)
-"""Convention for CFA image stacks (including mixed bands in each layer of data)."""
+"""Convention for CFA image stacks."""
 
 dark_ref_dims = (height_coord, width_coord)
 """Convention for dark reference image dimensions."""
