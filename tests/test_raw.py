@@ -7,6 +7,7 @@ import pytest
 
 import numpy as np
 import xarray as xr
+import xarray.testing as xrt
 import colour_demosaicing as cdm
 
 import fpipy.raw as fpr
@@ -50,9 +51,9 @@ def metas(idxs):
 
 @pytest.fixture(
     params=[
-        (1, 2, 2),
-        (2, 4, 4),
-        (3, 4, 8)
+#        (1, 2, 2),
+#        (2, 4, 4),
+        (3, 8, 8)
         ])
 def size(request):
     return request.param
@@ -85,7 +86,7 @@ def dark(request, size):
     return request.param, np.ones((y, x), dtype=np.uint16)
 
 
-@pytest.fixture(params=[1, 0.5])
+@pytest.fixture(params=[1])
 def exposure(request):
     return request.param
 
@@ -126,7 +127,7 @@ def raw(cfa, dark, pattern, exposure):
 
 
 @pytest.fixture
-def rad(cfa, dark):
+def rad(cfa, dark, exposure):
     k, y, x = cfa.shape
     _, npeaks, _ = metas(k)
     hasdark, _ = dark
@@ -136,8 +137,9 @@ def rad(cfa, dark):
         values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
     else:
         values = np.array([4, 1, 0, 5, 4, 1], dtype=np.float64)
-    values = np.tile(values.reshape(-1, 1, 1), b // 6 + 1)[:b]
 
+    values = values.reshape(-1, 1, 1)
+    values = np.tile(values, (b // 6 + 1, 1, 1))[:b] / exposure
     data = np.kron(np.ones((y, x), dtype=np.float64), values)
     wls = wavelengths(b)
 
@@ -214,6 +216,18 @@ def test_raw_to_radiance_format(raw):
         ]
     for v in variables:
         assert v in rad.variables
+
+
+def test_raw_to_radiance_correctness(raw, rad):
+    print(raw.cfa.shape)
+    print(rad.radiance.shape)
+    expected = rad[c.radiance_data].isel(
+            x=slice(1, -2), y=slice(1, -2)
+            ).transpose(c.band_index, c.height_coord, c.width_coord)
+    actual = fpr.raw_to_radiance(raw)[c.radiance_data].isel(
+            x=slice(1, -2), y=slice(1, -2)
+            ).transpose(c.band_index, c.height_coord, c.width_coord)
+    xrt.assert_equal(expected, actual)
 
 
 def test_subtract_dark(raw):
