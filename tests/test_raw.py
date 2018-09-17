@@ -125,6 +125,34 @@ def raw(cfa, dark, pattern, exposure):
     return raw
 
 
+@pytest.fixture
+def rad(cfa, dark):
+    k, y, x = cfa.shape
+    _, npeaks, _ = metas(k)
+    hasdark, _ = dark
+    b = np.sum(npeaks)
+
+    if hasdark:
+        values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
+    else:
+        values = np.array([4, 1, 0, 5, 4, 1], dtype=np.float64)
+    values = np.tile(values.reshape(-1, 1, 1), b // 6 + 1)[:b]
+
+    data = np.kron(np.ones((y, x), dtype=np.float64), values)
+    wls = wavelengths(b)
+
+    rad = xr.Dataset(
+            data_vars={
+                c.radiance_data: (c.radiance_dims, data),
+                c.wavelength_data: (c.band_index, wls),
+                },
+            coords={
+                c.band_index: np.arange(b),
+                }
+            )
+    return rad
+
+
 def test_ENVI_raw_format(raw, raw_ENVI):
     assert type(raw_ENVI) is type(raw)
 
