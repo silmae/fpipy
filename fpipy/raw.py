@@ -336,15 +336,14 @@ class BayerPattern(IntEnum):
     BGGR = 2
     RGGB = 3
 
+    # Aliases (GenICam PixelColorFilter values)
+    BayerGB = 0
+    BayerGR = 1
+    BayerBG = 2
+    BayerRG = 3
+
     def __str__(self):
         return self.name
-
-    @classmethod
-    def get(self, pattern):
-        try:
-            return self[pattern.upper()]
-        except (KeyError, AttributeError):
-            return self(pattern)
 
 
 def demosaic(cfa, pattern, dm_method):
@@ -365,7 +364,8 @@ def demosaic(cfa, pattern, dm_method):
     -------
     xarray.DataArray
     """
-    pattern_name = BayerPattern.get(pattern).name
+    if type(pattern) is BayerPattern:
+        pattern = pattern.name
 
     dm_methods = {
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
@@ -377,7 +377,7 @@ def demosaic(cfa, pattern, dm_method):
     res = xr.apply_ufunc(
         dm_alg,
         cfa,
-        kwargs=dict(pattern=pattern_name),
+        kwargs=dict(pattern=pattern),
         input_core_dims=[(c.height_coord, c.width_coord)],
         output_core_dims=[(c.RGB_dims)])
     res.coords[c.colour_coord] = ['R', 'G', 'B']
