@@ -109,11 +109,14 @@ def _cfa_dataset(
         )
 
     if c.image_index not in res.coords:
-        res = res.assign_coords(**{c.image_index: np.arange(0, cfa.shape[0])})
+        res = res.assign_coords(
+                **{c.image_index: np.arange(0, cfa.shape[0])})
     if c.height_coord not in res.coords:
-        res = res.assign_coords(**{c.height_coord: np.arange(0, cfa.shape[1]) + 0.5})
+        res = res.assign_coords(
+                **{c.height_coord: np.arange(0, cfa.shape[1]) + 0.5})
     if c.width_coord not in res.coords:
-        res = res.assign_coords(**{c.width_coord: np.arange(0, cfa.shape[2]) + 0.5})
+        res = res.assign_coords(
+                **{c.width_coord: np.arange(0, cfa.shape[2]) + 0.5})
 
     if c.peak_coord not in res.coords:
         res = res.assign_coords(**{c.peak_coord: [1, 2, 3]})
