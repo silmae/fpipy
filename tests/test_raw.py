@@ -6,6 +6,7 @@
 import pytest
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import xarray as xr
 import xarray.testing as xrt
 import colour_demosaicing as cdm
@@ -18,6 +19,7 @@ import fpipy.conventions as c
 @pytest.fixture(scope="session")
 def raw_ENVI():
     return house_raw()
+
 
 @pytest.fixture
 def wavelengths(b):
@@ -95,18 +97,17 @@ def exposure(request):
 def raw(cfa, dark, pattern, exposure):
     b, y, x = cfa.shape
     sinvs, npeaks, wls = metas(b)
-    dc_included, dark = dark
+    dc_included, dref = dark
 
     data = xr.DataArray(
-            cfa,
-            dims=c.cfa_dims,
-            attrs={c.dc_included_attr: dc_included},
-            )
-
+        cfa,
+        dims=c.cfa_dims,
+        attrs={c.dc_included_attr: dc_included}
+        )
     raw = xr.Dataset(
         data_vars={
             c.cfa_data: data,
-            c.dark_reference_data: (c.dark_ref_dims, dark),
+            c.dark_reference_data: (c.dark_ref_dims, dref),
             c.number_of_peaks: (c.image_index, npeaks),
             c.sinv_data: (
                 (c.image_index, c.peak_coord, c.colour_coord),
@@ -120,7 +121,7 @@ def raw(cfa, dark, pattern, exposure):
             c.image_index: np.arange(b),
             c.peak_coord: np.array([1, 2, 3]),
             c.colour_coord: ['R', 'G', 'B'],
-            }
+            },
         )
 
     return raw
@@ -230,9 +231,26 @@ def test_raw_to_radiance_correctness(raw, rad):
     xrt.assert_equal(expected, actual)
 
 
-def test_subtract_dark(raw):
+def test_subtract_dark_when_needed(raw):
+
     old = raw[c.cfa_data]
-    new = fpr.subtract_dark(raw)[c.cfa_data]
-    assert new.dtype is old.dtype
-    assert np.all(new <= old)
-    assert np.all(new >= 0)
+
+    if old.attrs[c.dc_included_attr]:
+        new = fpr.subtract_dark(raw)[c.cfa_data]
+        assert_array_equal(new, fpr._subtract_clip(old, 1))
+    else:
+        with pytest.warns(
+                UserWarning,
+                match='has {} set to False'.format(c.dc_included_attr)):
+            new = fpr.subtract_dark(raw)[c.cfa_data]
+            assert_array_equal(new, old)
+
+    assert new.attrs[c.dc_included_attr] == False
+
+#def test_subtract_clip():
+#    old =
+#    new =
+#    assert new.dtype is old.dtype
+#    assert np.(new <= old)
+#    assert np.all(new >= 0)
+#    assert new.shape == old.shape
