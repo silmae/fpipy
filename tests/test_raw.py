@@ -53,9 +53,9 @@ def metas(idxs):
 
 @pytest.fixture(
     params=[
-#        (1, 2, 2),
-#        (2, 4, 4),
-        (3, 8, 8)
+        (1, 8, 8),
+        (1, 12, 8),
+        (3, 8, 8),
         ])
 def size(request):
     return request.param
@@ -88,7 +88,7 @@ def dark(request, size):
     return request.param, np.ones((y, x), dtype=np.uint16)
 
 
-@pytest.fixture(params=[1])
+@pytest.fixture(params=[1, 0.5])
 def exposure(request):
     return request.param
 
@@ -135,13 +135,13 @@ def rad(cfa, dark, exposure):
     b = np.sum(npeaks)
 
     if hasdark:
-        values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
-    else:
         values = np.array([4, 1, 0, 5, 4, 1], dtype=np.float64)
+    else:
+        values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
 
     values = values.reshape(-1, 1, 1)
-    values = np.tile(values, (b // 6 + 1, 1, 1))[:b] / exposure
-    data = np.kron(np.ones((y, x), dtype=np.float64), values)
+    values = np.tile(values, (b // 6 + 1, 1, 1))[:b]
+    data = np.kron(np.ones((y, x), dtype=np.float64), values) / exposure
     wls = wavelengths(b)
 
     rad = xr.Dataset(
