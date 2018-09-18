@@ -303,9 +303,10 @@ def subtract_dark(
 
     """
 
-    if dc_attr in data.attrs and not data.attrs[dc_attr]:
+    if (dc_attr in data[c.cfa_data].attrs and
+       not data[c.cfa_data].attrs[dc_attr]):
         warn(UserWarning(
-            ('Data already has {} set to false,'
+            ('Data already has {} set to False,'
              'skipping dark subtraction').format(dc_attr)))
     else:
         if dark is None:
@@ -314,7 +315,7 @@ def subtract_dark(
         data[c.cfa_data] = xr.apply_ufunc(
                 _subtract_clip, data[c.cfa_data], dark
                 )
-        data.attrs[dc_attr] = False
+        data[c.cfa_data].attrs[dc_attr] = False
 
     return data
 
