@@ -5,6 +5,7 @@ import colour_demosaicing as cdm
 
 import fpipy.conventions as c
 from fpipy.data import house_raw
+from fpipy.raw import BayerPattern
 
 
 @pytest.fixture(scope="session")
@@ -57,6 +58,17 @@ def size(request):
 @pytest.fixture(
     params=['GBRG', 'GRBG', 'BGGR', 'RGGB']
     )
+def pattern_string(request):
+    return request.param
+
+
+@pytest.fixture(
+    params=[
+        BayerPattern.GBRG,
+        BayerPattern.GRBG,
+        BayerPattern.BGGR,
+        BayerPattern.RGGB
+    ])
 def pattern(request):
     return request.param
 
@@ -65,7 +77,7 @@ def pattern(request):
 def cfa(size, pattern):
     b, y, x = size
 
-    masks = cdm.bayer.masks_CFA_Bayer((y, x), pattern)
+    masks = cdm.bayer.masks_CFA_Bayer((y, x), str(pattern))
     cfa = np.zeros(size, dtype=np.uint16)
     cfa[:, masks[0]] = 1  # Red
     cfa[:, masks[1]] = 2  # Green
@@ -106,7 +118,7 @@ def raw(cfa, dark, pattern, exposure):
                 (c.image_index, c.peak_coord, c.colour_coord),
                 sinvs
                 ),
-            c.cfa_pattern_data: pattern,
+            c.cfa_pattern_data: str(pattern),
             c.camera_exposure: exposure,
             c.wavelength_data: ((c.image_index, c.peak_coord), wls),
             },
