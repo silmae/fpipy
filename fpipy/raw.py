@@ -176,10 +176,8 @@ def raw_to_radiance(dataset):
             **{c.band_index: radiances[c.band_index]}
             )
     radiances = radiances.to_dataset(name=c.radiance_data)
-    radiances = radiances.reset_coords(
-            [coord for coord in radiances.coords if coord not in
-                c.radiance_dims]
-            )
+    radiances = radiances.reset_coords()
+
     return radiances
 
 
