@@ -13,6 +13,17 @@ import fpipy.raw as fpr
 import fpipy.conventions as c
 
 
+def test_ENVI_rad_format(rad, rad_ENVI):
+    assert type(rad_ENVI) is type(rad)
+
+    for dim in rad.dims:
+        assert dim in rad_ENVI.dims
+    for coord in rad.coords:
+        assert coord in rad_ENVI.coords
+    for variable in rad.variables:
+        assert variable in rad_ENVI.variables
+
+
 def test_ENVI_raw_format(raw, raw_ENVI):
     assert type(raw_ENVI) is type(raw)
 
