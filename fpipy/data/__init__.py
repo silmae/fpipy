@@ -6,6 +6,7 @@
 import os.path as osp
 from xarray import open_rasterio
 from ..io import read_ENVI_cfa
+import fpipy.conventions as c
 
 data_dir = osp.abspath(osp.dirname(__file__))
 
@@ -50,4 +51,7 @@ def house_radiance():
 
     """
 
-    return open_rasterio(osp.join(data_dir, 'house_crop_4b_RAD.dat'))
+    res = open_rasterio(osp.join(data_dir, 'house_crop_4b_RAD.dat'))
+    res = res.to_dataset(name=c.radiance_data)
+    res = res.reset_coords()
+    return res
