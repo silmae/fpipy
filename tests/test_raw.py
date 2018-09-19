@@ -11,6 +11,7 @@ import xarray.testing as xrt
 
 import fpipy.raw as fpr
 import fpipy.conventions as c
+from fpipy.raw import BayerPattern
 
 
 def test_ENVI_raw_format(raw, raw_ENVI):
@@ -22,6 +23,13 @@ def test_ENVI_raw_format(raw, raw_ENVI):
         assert coord in raw_ENVI.coords
     for variable in raw.variables:
         assert variable in raw_ENVI.variables
+
+
+def test_genicam_patterns():
+    assert BayerPattern.BayerGB is BayerPattern.GBRG
+    assert BayerPattern.BayerGR is BayerPattern.GRBG
+    assert BayerPattern.BayerBG is BayerPattern.BGGR
+    assert BayerPattern.BayerRG is BayerPattern.RGGB
 
 
 def test_raw_format(raw):
