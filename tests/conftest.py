@@ -4,7 +4,12 @@ import xarray as xr
 import colour_demosaicing as cdm
 
 import fpipy.conventions as c
-from fpipy.data import house_raw
+from fpipy.data import house_raw, house_radiance
+
+
+@pytest.fixture(scope="session")
+def rad_ENVI():
+    return house_radiance()
 
 
 @pytest.fixture(scope="session")
