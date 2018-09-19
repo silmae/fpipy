@@ -77,8 +77,6 @@ def test_raw_to_radiance_format(raw):
 
 
 def test_raw_to_radiance_correctness(raw, rad):
-    print(raw.cfa.shape)
-    print(rad.radiance.shape)
     expected = rad[c.radiance_data].isel(
             x=slice(1, -2), y=slice(1, -2)
             ).transpose(c.band_index, c.height_coord, c.width_coord)
