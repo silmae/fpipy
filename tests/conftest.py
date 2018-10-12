@@ -17,14 +17,15 @@ def raw_ENVI():
     return house_raw()
 
 
-@pytest.fixture
 def wavelengths(b):
     start, end = (400, 1200)
     return np.linspace(start, end, b)
 
 
 @pytest.fixture
-def metas(idxs):
+def metas(size):
+    idxs = size[0]
+
     # Number of peaks for each index
     npeaks = np.tile([1, 2, 3], idxs + idxs % 3)[:idxs]
 
@@ -92,9 +93,9 @@ def exposure(request):
 
 
 @pytest.fixture
-def raw(cfa, dark, pattern, exposure):
+def raw(cfa, dark, pattern, exposure, metas):
     b, y, x = cfa.shape
-    sinvs, npeaks, wls = metas(b)
+    sinvs, npeaks, wls = metas
     dc_included, dref = dark
 
     data = xr.DataArray(
@@ -126,9 +127,9 @@ def raw(cfa, dark, pattern, exposure):
 
 
 @pytest.fixture
-def rad(cfa, dark, exposure):
+def rad(cfa, dark, exposure, metas):
     k, y, x = cfa.shape
-    _, npeaks, _ = metas(k)
+    _, npeaks, _ = metas
     hasdark, _ = dark
     b = np.sum(npeaks)
 
