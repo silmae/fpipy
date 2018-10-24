@@ -161,7 +161,7 @@ def test_reflectance_is_sensible(raw):
     target = xr.DataArray(np.ones(ref[c.reflectance_data].shape),
                           dims=ref[c.reflectance_data].dims,
                           coords=ref[c.reflectance_data].coords)
-    target.values[ref[c.radiance_data].values == 0] = np.nan
+    target.data[ref[c.radiance_data].values == 0] = np.nan
 
     xrt.assert_equal(ref[c.reflectance_data], target)
 # def test_subtract_clip():

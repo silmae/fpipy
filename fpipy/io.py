@@ -152,17 +152,17 @@ def read_ENVI_cfa(filepath, raw_unit='dn'):
 
     if ds.attrs.pop('dark layer included'):
         ds[c.dark_reference_data] = xr.DataArray(
-                envi.values[0, ::],
+                envi.data[0, ::],
                 dims=c.dark_ref_dims,
                 coords={c.height_coord: envi['y'], c.width_coord: envi['x']},
                 attrs={'units': raw_unit}
                 )
-        ds[c.cfa_data] = (c.cfa_dims, envi.values[1:, ::])
+        ds[c.cfa_data] = (c.cfa_dims, envi.data[1:, ::])
         ds[c.cfa_data].attrs[c.dc_included_attr] = True
     else:
         # Note that we do not no whether or not the data still includes dark
         # current (only that there was no reference).
-        ds[c.cfa_data] = (c.cfa_dims, envi.values)
+        ds[c.cfa_data] = (c.cfa_dims, envi.data)
 
     # Set units for the CFA
     ds[c.cfa_data].attrs['units'] = raw_unit

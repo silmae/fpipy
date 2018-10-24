@@ -47,7 +47,7 @@ def create_cfa(rad, S, pattern):
             dims=('colour', 'wavelength'),
             coords={
                 'colour':['R','G','B'],
-                'wavelength': rad.wavelength.values[:-1]
+                'wavelength': rad.wavelength.data[:-1]
                 }
             )
         S2 = xr.DataArray(
@@ -55,7 +55,7 @@ def create_cfa(rad, S, pattern):
             dims=('colour', 'wavelength'),
             coords={
                 'colour':['R','G','B'],
-                'wavelength': rad.wavelength.values[1:]
+                'wavelength': rad.wavelength.data[1:]
                 }
             )
 
@@ -88,7 +88,7 @@ def create_cfa(rad, S, pattern):
                 s.sel(colour=c),
                 rad.sel(wavelength=s.wavelength),
                 dims='wavelength'
-                ).values[mask]
+                ).data[mask]
 
     cfa = xr.DataArray(
         cfadata,

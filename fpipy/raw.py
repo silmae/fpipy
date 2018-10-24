@@ -321,7 +321,7 @@ def _raw_to_rgb(raw, dm_method):
     if c.cfa_pattern_data in raw[c.cfa_data].attrs:
         pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
     else:
-        pattern = str(raw[c.cfa_pattern_data].values)
+        pattern = str(raw[c.cfa_pattern_data].data)
 
     raw[c.rgb_data] = demosaic(
             raw[c.cfa_data],
@@ -352,7 +352,7 @@ def _rgb_to_rad(rgb):
     if c.camera_exposure in rgb[c.rgb_data].attrs:
         exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
     else:
-        exposure = rgb[c.camera_exposure].values
+        exposure = rgb[c.camera_exposure].data
 
     # Preserve metadata by setting them as coordinates
     preserved_data = [
