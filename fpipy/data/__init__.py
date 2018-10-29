@@ -6,7 +6,8 @@
 import os.path as osp
 from xarray import open_rasterio
 from ..io import read_ENVI_cfa
-import fpipy.conventions as c
+from .. import conventions as c
+
 
 data_dir = osp.abspath(osp.dirname(__file__))
 
