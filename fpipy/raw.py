@@ -127,9 +127,55 @@ def _cfa_dataset(
 
     return res
 
-#def raw_to_reflectance(dataset, white):
+def raw_to_reflectance(dataset, whiteraw):
+    """Performs demosaicing and computes radiance from RGB values.
 
-#def radiance_to_reflectance(radiance, white):
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Requires data to be found via dataset.cfa, dataset.npeaks,
+        dataset.sinvs, dataset.wavelength, dataset.fwhm and dataset.exposure.
+
+    white : xarray.Dataset
+        Same as dataset but for a cube that describes a white reference target.
+
+    pattern : BayerPattern or str, optional
+        Bayer pattern used to demosaic the CFA.
+        Can be supplied to override the file metadata value in cases where it
+        is missing or incorrect.
+
+    dm_method : str, optional
+        **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
+        Demosaicing method. Default is bilinear. See the `colour_demosaicing`
+        package for more info on the different methods.
+
+    Returns
+    -------
+    processed : xarray.Dataset
+        Includes computed radiance and reflectance as data variables sorted by
+        wavelength.
+    """
+    radiance = raw_to_radiance(dataset)
+    white = raw_to_radiance(whiteraw)
+    return xr.Dataset(data_vars={'radiance': radiance,
+    'reflectance': radiance_to_reflectance(radiance, white)})
+
+def radiance_to_reflectance(radiance, white):
+    """Computes reflectance from radiance and a white reference cube.
+
+    Parameters
+    ----------
+    radiance : xarray.DataArray
+
+    white : xarray.DataArray
+        White reference image with same structure as radiance.
+
+    Returns
+    -------
+    reflectance : xarray.DataArray
+    """
+
+    return radiance.groupby('wavelength') / white
 
 def raw_to_radiance(dataset):
     """Performs demosaicing and computes radiance from RGB values.
@@ -157,6 +203,7 @@ def raw_to_radiance(dataset):
         and with x, y, wavelength and fwhm as coordinates.
         Passes along relevant attributes from input dataset.
     """
+    #LISÄÄ DOCSTRINGIN MUKAINEN TOIMINTA
 
     # Calculate radiances
     radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
