@@ -127,6 +127,9 @@ def _cfa_dataset(
 
     return res
 
+#def raw_to_reflectance(dataset, white):
+
+#def radiance_to_reflectance(radiance, white):
 
 def raw_to_radiance(dataset):
     """Performs demosaicing and computes radiance from RGB values.
