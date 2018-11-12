@@ -45,7 +45,7 @@ def _cfa_dataset(
     Parameters
     ----------
     cfa: array-like
-        (n,y,x) array of colour filter array images with labeled dimensions
+        (n,y,x) array of colour filter array images with labelled dimensions
         index, x and y. If dark is supplied,
         See `cfa_stack_to_da`.
 
@@ -127,6 +127,7 @@ def _cfa_dataset(
 
     return res
 
+
 def raw_to_reflectance(dataset, whiteraw):
     """Performs demosaicing and computes radiance from RGB values.
 
@@ -157,27 +158,39 @@ def raw_to_reflectance(dataset, whiteraw):
     """
     radiance = raw_to_radiance(dataset)
     white = raw_to_radiance(whiteraw)
-    return xr.Dataset(data_vars={'radiance': radiance,
-    'reflectance': radiance_to_reflectance(radiance, white)})
+    return radiance_to_reflectance(radiance, white)
+
 
 def radiance_to_reflectance(radiance, white):
-    """Computes reflectance from radiance and a white reference cube.
+    """Computes reflectance from radiance and a white reference cube. The
+    assumptions about when an user wants DataArray and when do they want
+    Dataset may have to be looked into in the future.
 
     Parameters
     ----------
     radiance : xarray.DataArray
 
-    white : xarray.DataArray
-        White reference image with same structure as radiance.
+    white : xarray.DataArray or xarray.Dataset
+        White reference image
 
     Returns
     -------
-    reflectance : xarray.DataArray
+    dataset : xarray.Dataset
+        Includes both radiance and reflectance DataArrays.
     """
 
-    return radiance.groupby('wavelength') / white
+    if hasattr(white, c.cfa_data):
+        white = raw_to_radiance(white)
 
-def raw_to_radiance(dataset):
+    reflectance = radiance.groupby('wavelength') / white
+
+    return xr.Dataset(
+        data_vars={
+            c.radiance_data: radiance,
+            c.reflectance_data: reflectance})
+
+
+def raw_to_radiance(dataset, pattern, dm_method):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -203,10 +216,11 @@ def raw_to_radiance(dataset):
         and with x, y, wavelength and fwhm as coordinates.
         Passes along relevant attributes from input dataset.
     """
-    #LISÄÄ DOCSTRINGIN MUKAINEN TOIMINTA
 
     # Calculate radiances
-    radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
+    demoargs = {c.cfa_pattern_data: pattern, 'dm_method': dm_method}
+    radiances = dataset.groupby(c.image_index).apply(_raw_to_rad,
+                                                     kwargs=demoargs)
 
     # Create a band coordinate (MultiIndex) and drop nonexistant indices
     radiances = radiances.stack(

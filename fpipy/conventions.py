@@ -26,6 +26,9 @@ colour_coord = 'colour'
 radiance_data = 'radiance'
 """DataArray containing a stack of radiance images."""
 
+reflectance_data = 'reflectance'
+"""DataArray containing a stack of reflectance images."""
+
 cfa_data = 'cfa'
 """DataArray containing a stack of CFA images."""
 
