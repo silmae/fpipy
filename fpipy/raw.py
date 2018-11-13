@@ -18,7 +18,6 @@ Calculating radiances from raw data and plotting them can be done as follows::
     radiance = fpi.raw_to_radiance(data)
     radiance.sel(wavelength=600, method='nearest').plot()
 """
-
 from warnings import warn
 from enum import IntEnum
 import numpy as np
@@ -158,10 +157,10 @@ def raw_to_reflectance(dataset, whiteraw):
     """
     radiance = raw_to_radiance(dataset)
     white = raw_to_radiance(whiteraw)
-    return radiance_to_reflectance(radiance, white)
+    return radiance_to_reflectance(radiance, white, dataset=True)
 
 
-def radiance_to_reflectance(radiance, white):
+def radiance_to_reflectance(radiance, white, dataset=True):
     """Computes reflectance from radiance and a white reference cube. The
     assumptions about when an user wants DataArray and when do they want
     Dataset may have to be looked into in the future.
@@ -173,24 +172,30 @@ def radiance_to_reflectance(radiance, white):
     white : xarray.DataArray or xarray.Dataset
         White reference image
 
+    dataset: boolean, optional
+        Wether the function should return radiance and reflectance together as
+        a Dataset. Default is True.
+
     Returns
     -------
     dataset : xarray.Dataset
         Includes both radiance and reflectance DataArrays.
     """
-
     if hasattr(white, c.cfa_data):
+        warn('Converting white from raw to radiance automatically!')
         white = raw_to_radiance(white)
 
     reflectance = radiance.groupby('wavelength') / white
 
+    if dataset is False:
+        return reflectance
     return xr.Dataset(
         data_vars={
             c.radiance_data: radiance,
             c.reflectance_data: reflectance})
 
 
-def raw_to_radiance(dataset, pattern, dm_method):
+def raw_to_radiance(dataset, pattern='RGGB', dm_method='bilinear'):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -216,7 +221,6 @@ def raw_to_radiance(dataset, pattern, dm_method):
         and with x, y, wavelength and fwhm as coordinates.
         Passes along relevant attributes from input dataset.
     """
-
     # Calculate radiances
     demoargs = {c.cfa_pattern_data: pattern, 'dm_method': dm_method}
     radiances = dataset.groupby(c.image_index).apply(_raw_to_rad,
@@ -364,7 +368,6 @@ def subtract_dark(
         Negative values are clamped to 0.
 
     """
-
     if (dc_attr in data[c.cfa_data].attrs and
        not data[c.cfa_data].attrs[dc_attr]):
         warn(UserWarning(
