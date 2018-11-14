@@ -6,6 +6,7 @@
 import pytest
 
 from numpy.testing import assert_array_equal
+import numpy as np
 import xarray as xr
 import xarray.testing as xrt
 
@@ -113,6 +114,20 @@ def test_subtract_dark_when_needed(raw):
 
     assert new.attrs[c.dc_included_attr] is False
 
+
+def test_reflectance_is_sensible(rad):
+    """This is a bit ugly, but successfully tests that reflectance should be 1
+    if dataset is used as its own white reference unless the reflectance is
+    0/0 = NaN.
+    """
+    ref = fpr.radiance_to_reflectance(rad.radiance, rad.radiance)
+    for band in rad.band:
+        for x in rad.x:
+            for y in rad.y:
+                if rad.radiance.sel(band=band, x=x, y=y) == 0:
+                    ref.sel(band=band, x=x, y=y).values is np.nan
+                else:
+                    assert ref.sel(band=band, x=x, y=y) == 1.0
 # def test_subtract_clip():
 #    old =
 #    new =

@@ -18,7 +18,6 @@ Calculating radiances from raw data and plotting them can be done as follows::
     radiance = fpi.raw_to_radiance(data)
     radiance.sel(wavelength=600, method='nearest').plot()
 """
-
 from warnings import warn
 from enum import IntEnum
 import numpy as np
@@ -45,7 +44,7 @@ def _cfa_dataset(
     Parameters
     ----------
     cfa: array-like
-        (n,y,x) array of colour filter array images with labeled dimensions
+        (n,y,x) array of colour filter array images with labelled dimensions
         index, x and y. If dark is supplied,
         See `cfa_stack_to_da`.
 
@@ -128,14 +127,87 @@ def _cfa_dataset(
     return res
 
 
-def raw_to_radiance(dataset):
+def raw_to_reflectance(raw, whiteraw, dataset=True):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
     ----------
-    dataset : xarray.Dataset
-        Requires data to be found via dataset.cfa, dataset.npeaks,
-        dataset.sinvs, dataset.wavelength, dataset.fwhm and dataset.exposure.
+    raw : xarray.Dataset
+        Requires data to be found via raw.cfa, raw.npeaks,
+        raw.sinvs, raw.wavelength, raw.fwhm and raw.exposure.
+
+    white : xarray.Dataset
+        Same as raw but for a cube that describes a white reference target.
+
+    pattern : BayerPattern or str, optional
+        Bayer pattern used to demosaic the CFA.
+        Can be supplied to override the file metadata value in cases where it
+        is missing or incorrect.
+
+    dm_method : str, optional
+        **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
+        Demosaicing method. Default is bilinear. See the `colour_demosaicing`
+        package for more info on the different methods.
+
+    dataset: boolean, optional
+        Wether the function should return radiance and reflectance together as
+        a Dataset. Default is True.
+
+    Returns
+    -------
+    reflectance: xarray.Dataset or xarray.DataArray
+        Includes computed radiance and reflectance as data variables sorted by
+        wavelength or just the reflectance DataArray.
+    """
+    radiance = raw_to_radiance(raw)
+    white = raw_to_radiance(whiteraw)
+    return radiance_to_reflectance(radiance, white, dataset=True)
+
+
+def radiance_to_reflectance(radiance, white, dataset=False):
+    """Computes reflectance from radiance and a white reference cube. The
+    assumptions about when an user wants DataArray and when do they want
+    Dataset may have to be looked into in the future.
+
+    Parameters
+    ----------
+    radiance : xarray.DataArray
+
+    white : xarray.DataArray or xarray.Dataset
+        White reference image
+
+    dataset: boolean, optional
+        Wether the function should return radiance and reflectance together as
+        a Dataset. Default is False.
+
+    Returns
+    -------
+    reflectance: xarray.Datarray or xarray.Dataset
+        Reflectance = Radiance / White_Radiance.
+    """
+    if hasattr(white, c.cfa_data):
+        warn('Converting white from raw to radiance automatically!')
+        white = raw_to_radiance(white)
+
+    reflectance = radiance.groupby(c.band_index) / white
+
+    if dataset is False:
+        return reflectance
+    else:
+        return xr.Dataset(
+            data_vars={
+                c.radiance_data: radiance,
+                c.reflectance_data: reflectance})
+
+
+def raw_to_radiance(raw, **kwargs):
+    """Performs demosaicing and computes radiance from RGB values.
+
+    Parameters
+    ----------
+    raw : xarray.Dataset
+        Requires data to be found via raw.cfa, raw.npeaks,
+        raw.sinvs, raw.wavelength, raw.fwhm and raw.exposure.
 
     pattern : BayerPattern or str, optional
         Bayer pattern used to demosaic the CFA.
@@ -149,14 +221,13 @@ def raw_to_radiance(dataset):
 
     Returns
     -------
-    radiance : xarray.DataArray
+    radiances: xarray.DataArray
         Includes computed radiance sorted by wavelength
         and with x, y, wavelength and fwhm as coordinates.
-        Passes along relevant attributes from input dataset.
+        Passes along relevant attributes from input raw.
     """
-
     # Calculate radiances
-    radiances = dataset.groupby(c.image_index).apply(_raw_to_rad)
+    radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
 
     # Create a band coordinate (MultiIndex) and drop nonexistant indices
     radiances = radiances.stack(
@@ -186,13 +257,13 @@ def _raw_to_rad(raw, dark=None, dm_method='bilinear'):
 
     Parameters
     ----------
-    raw : xr.Dataset
+    raw: xr.Dataset
         Dataset containing raw CFA data to be passed through
         `subtract_dark`, `_raw_to_rgb` and `_rgb_to_rad`.
 
     Returns
     -------
-    res : xr.Dataset
+    res: xr.Dataset
         Dataset containing radiance data as
         `res[fpipy.conventions.radiance_data]`.
     """
@@ -216,7 +287,7 @@ def _raw_to_rgb(raw, dm_method):
 
     Returns
     -------
-    res : xr.Dataset
+    res: xr.Dataset
         Dataset containing the demosaiced R, G and B layers as res[c.rgb_data].
     """
     if c.cfa_pattern_data in raw[c.cfa_data].attrs:
@@ -243,7 +314,7 @@ def _rgb_to_rad(rgb):
 
     Returns
     -------
-    radiance : xr.Dataset
+    radiance: xr.Dataset
         Dataset containing radiance images for each passband peak.
 
     """
@@ -281,26 +352,25 @@ def subtract_dark(
 
     Parameters
     ----------
-    data : xarray.DataSet
+    data: xarray.DataSet
         Dataset containing the raw images (including dark current).
 
-    dark : array-like, optional
+    dark: array-like, optional
         Dark current reference measurement. If not given, tries to use
         data[c.dark_reference_data].
 
-    dc_attr : str, optional
+    dc_attr: str, optional
         Attribute to use for checking whether the data includes dark current,
         and to set False afterwards. Default is
         `fpipy.conventions.dc_included_attr`.
 
     Returns
     -------
-    refarray : xarray.Dataset
+    refarray: xarray.Dataset
         Data from which the dark current reference has been subtracted.
         Negative values are clamped to 0.
 
     """
-
     if (dc_attr in data[c.cfa_data].attrs and
        not data[c.cfa_data].attrs[dc_attr]):
         warn(UserWarning(
@@ -350,14 +420,14 @@ def demosaic(cfa, pattern, dm_method):
 
     Parameters
     ----------
-    cfa : xarray.DataArray
+    cfa: xarray.DataArray
 
-    pattern : BayerPattern or str, optional
+    pattern: BayerPattern or str, optional
         Bayer pattern used to demosaic the CFA.
         Can be supplied to override the file metadata value in cases where it
         is missing or incorrect.
 
-    dm_method : str
+    dm_method: str
 
     Returns
     -------
