@@ -189,7 +189,7 @@ def radiance_to_reflectance(radiance, white, dataset=False):
         warn('Converting white from raw to radiance automatically!')
         white = raw_to_radiance(white)
 
-    reflectance = radiance.groupby(c.band_index) / white
+    reflectance = radiance / white
 
     if dataset is False:
         return reflectance
