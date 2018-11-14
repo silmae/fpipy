@@ -116,18 +116,15 @@ def test_subtract_dark_when_needed(raw):
 
 
 def test_reflectance_is_sensible(rad):
-    """This is a bit ugly, but successfully tests that reflectance should be 1
-    if dataset is used as its own white reference unless the reflectance is
-    0/0 = NaN.
+    """Reflectance should be 1 if dataset is used as its own white reference
+    unless the reflectance is 0/0 = NaN.
     """
     ref = fpr.radiance_to_reflectance(rad.radiance, rad.radiance)
-    for band in rad.band:
-        for x in rad.x:
-            for y in rad.y:
-                if rad.radiance.sel(band=band, x=x, y=y) == 0:
-                    ref.sel(band=band, x=x, y=y).values is np.nan
-                else:
-                    assert ref.sel(band=band, x=x, y=y) == 1.0
+
+    target = xr.DataArray(np.ones(ref.shape), dims=ref.dims, coords=ref.coords)
+    target.values[rad.radiance.values == 0] = np.nan
+    
+    xrt.assert_equal(ref, target)
 # def test_subtract_clip():
 #    old =
 #    new =
