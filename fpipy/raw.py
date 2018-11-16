@@ -161,19 +161,19 @@ def raw_to_reflectance(raw, whiteraw, dataset=True):
     """
     radiance = raw_to_radiance(raw)
     white = raw_to_radiance(whiteraw)
-    return radiance_to_reflectance(radiance, white, dataset=True)
+    return radiance_to_reflectance(radiance, white, dataset=dataset)
 
 
-def radiance_to_reflectance(radiance, white, dataset=False):
+def radiance_to_reflectance(radiance, white, dataset=True):
     """Computes reflectance from radiance and a white reference cube. The
     assumptions about when an user wants DataArray and when do they want
     Dataset may have to be looked into in the future.
 
     Parameters
     ----------
-    radiance : xarray.DataArray
+    radiance : xarray.Dataset
 
-    white : xarray.DataArray or xarray.Dataset
+    white : xarray.Dataset
         White reference image
 
     dataset: boolean, optional
@@ -189,15 +189,12 @@ def radiance_to_reflectance(radiance, white, dataset=False):
         warn('Converting white from raw to radiance automatically!')
         white = raw_to_radiance(white)
 
-    reflectance = radiance / white
+    radiance[c.reflectance_data] = radiance[c.radiance_data] / white[c.radiance_data]  # noqa: E501
 
     if dataset is False:
-        return reflectance
+        return radiance[c.reflectance_data]
     else:
-        return xr.Dataset(
-            data_vars={
-                c.radiance_data: radiance,
-                c.reflectance_data: reflectance})
+        return radiance
 
 
 def raw_to_radiance(raw, **kwargs):
