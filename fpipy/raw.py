@@ -14,9 +14,9 @@ Calculating radiances from raw data and plotting them can be done as follows::
 
 
     data = house_raw() # Example raw data (including dark current)
-    data = subtract_dark(data)
-    radiance = fpi.raw_to_radiance(data)
-    radiance.sel(wavelength=600, method='nearest').plot()
+    rad = fpi.raw_to_radiance(data)
+    rad.swap_dims({'band': 'wavelength'}).radiance.sel(wavelength=600,
+                                                      method='nearest').plot()
 """
 from warnings import warn
 from enum import IntEnum
@@ -133,8 +133,8 @@ def raw_to_reflectance(raw, whiteraw, dataset=True):
     Parameters
     ----------
     raw : xarray.Dataset
-        Requires data to be found via raw.cfa, raw.npeaks,
-        raw.sinvs, raw.wavelength, raw.fwhm and raw.exposure.
+        Requires data that includes cfa, npeaks, sinvs, wavelength, fwhm
+        exposure.
 
     white : xarray.Dataset
         Same as raw but for a cube that describes a white reference target.
@@ -178,7 +178,7 @@ def radiance_to_reflectance(radiance, white, dataset=True):
 
     dataset: boolean, optional
         Wether the function should return radiance and reflectance together as
-        a Dataset. Default is False.
+        a Dataset. Default is True.
 
     Returns
     -------
@@ -197,14 +197,14 @@ def radiance_to_reflectance(radiance, white, dataset=True):
         return radiance
 
 
-def raw_to_radiance(raw, **kwargs):
+def raw_to_radiance(raw, dataset=True, **kwargs):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
     ----------
     raw : xarray.Dataset
-        Requires data to be found via raw.cfa, raw.npeaks,
-        raw.sinvs, raw.wavelength, raw.fwhm and raw.exposure.
+        Requires data that includes cfa, npeaks, sinvs, wavelength, fwhm
+        exposure.
 
     pattern : BayerPattern or str, optional
         Bayer pattern used to demosaic the CFA.
@@ -216,12 +216,15 @@ def raw_to_radiance(raw, **kwargs):
         Demosaicing method. Default is bilinear. See the `colour_demosaicing`
         package for more info on the different methods.
 
+    dataset: boolean, optional
+        Wether the function should return radiance and reflectance together as
+        a Dataset. Default is True.
+
     Returns
     -------
-    radiances: xarray.DataArray
-        Includes computed radiance sorted by wavelength
-        and with x, y, wavelength and fwhm as coordinates.
-        Passes along relevant attributes from input raw.
+    radiances: xarray.Dataset or xarray.DataArray
+        Includes computed radiance sorted by wavelength. Passes along relevant
+        attributes from input raw.
     """
     # Calculate radiances
     radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
@@ -246,6 +249,8 @@ def raw_to_radiance(raw, **kwargs):
     radiances = radiances.to_dataset(name=c.radiance_data)
     radiances = radiances.reset_coords()
 
+    if dataset is False:
+        return radiances[c.radiance_data]  # We have lost wavelength by now :((
     return radiances
 
 

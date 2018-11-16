@@ -115,16 +115,18 @@ def test_subtract_dark_when_needed(raw):
     assert new.attrs[c.dc_included_attr] is False
 
 
-def test_reflectance_is_sensible(rad):
+def test_reflectance_is_sensible(raw):
     """Reflectance should be 1 if dataset is used as its own white reference
     unless the reflectance is 0/0 = NaN.
     """
-    ref = fpr.radiance_to_reflectance(rad.radiance, rad.radiance)
+    ref = fpr.raw_to_reflectance(raw, raw)
 
-    target = xr.DataArray(np.ones(ref.shape), dims=ref.dims, coords=ref.coords)
-    target.values[rad.radiance.values == 0] = np.nan
+    target = xr.DataArray(np.ones(ref[c.reflectance_data].shape),
+                          dims=ref[c.reflectance_data].dims,
+                          coords=ref[c.reflectance_data].coords)
+    target.values[ref[c.radiance_data].values == 0] = np.nan
 
-    xrt.assert_equal(ref, target)
+    xrt.assert_equal(ref[c.reflectance_data], target)
 # def test_subtract_clip():
 #    old =
 #    new =
