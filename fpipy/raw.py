@@ -189,7 +189,9 @@ def radiance_to_reflectance(radiance, white, dataset=True):
         warn('Converting white from raw to radiance automatically!')
         white = raw_to_radiance(white)
 
-    radiance[c.reflectance_data] = radiance[c.radiance_data] / white[c.radiance_data]  # noqa: E501
+    radiance[c.reflectance_data] = (
+            radiance[c.radiance_data] / white[c.radiance_data]
+            )
 
     if dataset is False:
         return radiance[c.reflectance_data]
