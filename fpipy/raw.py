@@ -301,13 +301,13 @@ def _raw_to_rgb(raw, dm_method):
     Parameters
     ----------
     raw: xr.Dataset
-        Dataset containing a single CFA image and Bayer pattern information
-        either as variable/coordinate or an attribute.
+        Dataset containing variable cfa and mosaic pattern information, either
+        as a variable or an attribute of the cfa variable.
 
     Returns
     -------
     res: xr.Dataset
-        Dataset containing the demosaiced R, G and B layers as res[c.rgb_data].
+        Dataset containing the demosaiced R, G and B layers as a variable.
     """
     if c.cfa_pattern_data in raw[c.cfa_data].attrs:
         pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
@@ -329,12 +329,13 @@ def _rgb_to_rad(rgb):
     Parameters
     ----------
     rgb: xr.DataSet
-        Dataset containing an RGB image, exposure and inversion information.
+        Dataset containing as variables RGB image, exposure and radiance
+        inversion information.
 
     Returns
     -------
     radiance: xr.Dataset
-        Dataset containing radiance images for each passband peak.
+        Dataset containing radiances for each passband peak as a variable.
 
     """
 
