@@ -139,8 +139,8 @@ def read_ENVI_cfa(filepath, raw_unit='dn'):
     datfile = base + '.dat'
     hdtfile = base + '.hdt'
 
-    envi = xr.open_rasterio(datfile)
-    envi.load()
+    envi = xr.open_rasterio(datfile, chunks={})
+    #envi.load()
     envi.attrs.clear()  # Drop irrelevant attributes
 
     if 'fwhm' in envi.coords:
