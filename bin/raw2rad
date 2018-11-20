@@ -3,18 +3,15 @@
 import sys
 import os
 import argparse
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
-
+import dask
 import fpipy as fp
+from dask.diagnostics import ProgressBar
 
 
 def save_nc(ds, path):
     """Save dataset as netCDF, overwriting"""
     name, _ = os.path.splitext(path)
-    ds.to_netcdf(name + '.nc', mode='w')
+    return ds.to_netcdf(name + '.nc', mode='w', compute=False)
 
 
 def writable_dir(dirname):
@@ -91,13 +88,14 @@ def main(argv):
     prefix = args.prefix
 
     print('Calculating radiances from {0} files...'.format(len(inputs)))
-    if tqdm:
-        inputs = tqdm(inputs)
-
+    outputs = []
     for rawfile in inputs:
-        rad = fp.raw.raw_to_radiance(fp.read_ENVI_cfa(rawfile))
+        rad = fp.raw.raw_to_radiance(fp.read_ENVI_cfa(rawfile, chunks={'band': 1}))
         bname = os.path.basename(rawfile)
-        savecmd(rad, os.path.join(outdir, prefix + bname))
+        outputs.append(savecmd(rad, os.path.join(outdir, prefix + bname)))
+
+    with ProgressBar():
+        dask.compute(outputs)
 
 
 if __name__ == "__main__":
