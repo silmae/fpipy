@@ -416,7 +416,8 @@ def subtract_dark(
 
         data[c.cfa_data] = xr.apply_ufunc(
                 _subtract_clip, data[c.cfa_data], dark,
-                dask='allowed'
+                dask='parallelized',
+                output_dtypes=[data[c.cfa_data].dtype]
                 )
         data[c.cfa_data].attrs[dc_attr] = False
 
@@ -489,7 +490,9 @@ def demosaic(cfa, pattern, dm_method):
         kwargs=dict(pattern=pattern),
         input_core_dims=[(c.height_coord, c.width_coord)],
         output_core_dims=[(c.RGB_dims)],
-        dask='allowed'
+        dask='parallelized',
+        output_dtypes=[np.float64],
+        output_sizes={c.colour_coord: 3}
         )
     res.coords[c.colour_coord] = ['R', 'G', 'B']
     return res
