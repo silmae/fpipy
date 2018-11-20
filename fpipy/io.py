@@ -109,7 +109,7 @@ def read_hdt(hdtfile):
     return parse_meta_to_ds(meta)
 
 
-def read_ENVI_cfa(filepath, raw_unit='dn'):
+def read_ENVI_cfa(filepath, raw_unit='dn', **kwargs):
     """Read ENVI format CFA data and metadata to an xarray Dataset.
 
     For the VTT format raw ENVI files the ENVI metadata is superfluous and is
@@ -127,6 +127,9 @@ def read_ENVI_cfa(filepath, raw_unit='dn'):
     raw_unit : str, optional
         Units for the raw data.
 
+    **kwargs
+        Keyword arguments to be passed on to `xr.open_rasterio`.
+
     Returns
     -------
     dataset : xarray.Dataset
@@ -139,7 +142,7 @@ def read_ENVI_cfa(filepath, raw_unit='dn'):
     datfile = base + '.dat'
     hdtfile = base + '.hdt'
 
-    envi = xr.open_rasterio(datfile, chunks={})
+    envi = xr.open_rasterio(datfile, **kwargs)
     envi.attrs.clear()  # Drop irrelevant attributes
 
     if 'fwhm' in envi.coords:
