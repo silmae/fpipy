@@ -11,8 +11,25 @@ from .meta import parse_meta_to_ds
 from . import conventions as c
 
 
-def read_calibration(calibfile):
-    """Read calibration data from a CSV file and return an `xr.Dataset`."""
+def read_calibration(calibfile, wavelength_unit='nm'):
+    """Read a CSV calibration file to a structured dataset.
+
+    Parameters
+    ----------
+    calibfile : str
+        Filepath to the CSV file containing the metadata. The CSV is assumed to
+        have the following columns (case-sensitive, in no specific order):
+        ['Npeaks', 'SP1', 'SP2', 'SP3', 'PeakWL', 'FWHM', 'Sinv']
+
+    wavelength_unit : str, optional
+        Unit of the wavelength data in the calibration file.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset containing the calibration data in a structured format.
+
+    """
 
     df = pd.read_csv(calibfile, delimiter='\t', index_col='index')
 
@@ -42,6 +59,11 @@ def read_calibration(calibfile):
         coords={
             c.image_index: ds[c.image_index],
             c.peak_coord: ds[c.peak_coord]
+            },
+        attrs={
+            'units': wavelength_unit,
+            'long_name': 'peak center wavelength',
+            'standard_name': 'radiation_wavelength',
             }
         )
 
@@ -51,6 +73,10 @@ def read_calibration(calibfile):
         coords={
             c.image_index: ds[c.image_index],
             c.peak_coord: ds[c.peak_coord]
+            },
+        attrs={
+            'units': wavelength_unit,
+            'long_name': 'full width at half maximum'
             }
         )
 
