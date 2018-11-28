@@ -45,27 +45,43 @@ def parse_image_meta(meta, layer):
     im_meta[c.cfa_pattern_data] = str(
             BayerPattern(meta.getint(layer, 'bayer pattern')))
     im_meta[c.image_index] = meta.getint(layer, 'index')
-    im_meta[c.wavelength_data] = parse_peakmeta(meta.get(layer, 'wavelengths'))
-    im_meta[c.fwhm_data] = parse_peakmeta(meta.get(layer, 'fwhms'))
+    im_meta[c.wavelength_data] = parse_peakmeta(
+            meta.get(layer, 'wavelengths'),
+            'peak center wavelength',
+            'nm'
+            )
+    im_meta[c.fwhm_data] = parse_peakmeta(
+            meta.get(layer, 'fwhms'),
+            'full width at half maximum',
+            'nm'
+            )
     im_meta[c.setpoint_data] = parse_setpoints(meta.get(layer, 'setpoints'))
     im_meta[c.sinv_data] = parse_sinvs(meta.get(layer, 'sinvs'))
 
     return im_meta
 
 
-def parse_peakmeta(s):
+def parse_peakmeta(s, name, unit):
     return xr.DataArray(
             parsevec(s),
             dims=(c.peak_coord),
-            coords={c.peak_coord: [1, 2, 3]}
+            coords={c.peak_coord: [1, 2, 3]},
+            attrs={
+                'long_name': name,
+                'units': unit
+                },
             )
 
 
-def parse_setpoints(s):
+def parse_setpoints(s, unit='V'):
     return xr.DataArray(
             parsevec(s),
             dims=(c.setpoint_coord),
-            coords={c.setpoint_coord: ['SP1', 'SP2', 'SP3']}
+            coords={c.setpoint_coord: ['SP1', 'SP2', 'SP3']},
+            attrs={
+                'long_name': 'Setpoint voltages of the FPI',
+                'units': unit,
+                },
             )
 
 
