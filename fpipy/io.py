@@ -106,7 +106,7 @@ def read_hdt(hdtfile):
     return parse_meta_to_ds(meta)
 
 
-def read_ENVI_cfa(filepath):
+def read_ENVI_cfa(filepath, raw_unit='dn'):
     """Read ENVI format CFA data and metadata to an xarray Dataset.
 
     For the VTT format raw ENVI files the ENVI metadata is superfluous and is
@@ -120,6 +120,9 @@ def read_ENVI_cfa(filepath):
     filepath : str
         Path to the datafile to be opened, either with or without extension.
         Expects data and metadata to have extensions .dat and .hdt.
+
+    raw_unit : str, optional
+        Units for the raw data.
 
     Returns
     -------
@@ -149,7 +152,7 @@ def read_ENVI_cfa(filepath):
                 envi.values[0, ::],
                 dims=c.dark_ref_dims,
                 coords={c.height_coord: envi['y'], c.width_coord: envi['x']},
-                name='Dark reference'
+                attrs={'units': raw_unit}
                 )
         ds[c.cfa_data] = (c.cfa_dims, envi.values[1:, ::])
         ds[c.cfa_data].attrs[c.dc_included_attr] = True
@@ -158,4 +161,6 @@ def read_ENVI_cfa(filepath):
         # current (only that there was no reference).
         ds[c.cfa_data] = (c.cfa_dims, envi.values)
 
+    # Set units for the CFA
+    ds[c.cfa_data].attrs['units'] = raw_unit
     return ds
