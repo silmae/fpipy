@@ -193,6 +193,10 @@ def radiance_to_reflectance(radiance, white, dataset=True):
             radiance[c.radiance_data] / white[c.radiance_data]
             )
 
+    radiance = radiance.assign_attrs({
+        'long_name': 'reflectance',
+        'units': '1',
+        })
     if dataset is False:
         return radiance[c.reflectance_data]
     else:
