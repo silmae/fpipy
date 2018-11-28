@@ -38,12 +38,27 @@ def parse_image_meta(meta, layer):
 
     im_meta = xr.Dataset()
     im_meta[c.number_of_peaks] = meta.getint(layer, 'npeaks')
+    im_meta[c.number_of_peaks].attrs = {
+        'long_name': 'number of peaks per image',
+        'units': '1',
+        }
     im_meta[c.image_width] = meta.getint(layer, 'width')
     im_meta[c.image_height] = meta.getint(layer, 'height')
     im_meta[c.camera_gain] = meta.getfloat(layer, 'gain')
+    im_meta[c.camera_gain].attrs = {
+        'long_name': 'analog gain',
+        'units': '1'
+        }
     im_meta[c.camera_exposure] = meta.getfloat(layer, 'exposure time (ms)')
+    im_meta[c.camera_exposure].attrs = {
+        'long_name': 'exposure time',
+        'units': 'ms',
+        }
     im_meta[c.cfa_pattern_data] = str(
             BayerPattern(meta.getint(layer, 'bayer pattern')))
+    im_meta[c.cfa_pattern_data].attrs = {
+        'long_name': 'Bayer pattern string',
+        }
     im_meta[c.image_index] = meta.getint(layer, 'index')
     im_meta[c.wavelength_data] = parse_peakmeta(
             meta.get(layer, 'wavelengths'),
@@ -73,14 +88,14 @@ def parse_peakmeta(s, name, unit):
             )
 
 
-def parse_setpoints(s, unit='V'):
+def parse_setpoints(s):
     return xr.DataArray(
             parsevec(s),
             dims=(c.setpoint_coord),
             coords={c.setpoint_coord: ['SP1', 'SP2', 'SP3']},
             attrs={
-                'long_name': 'Setpoint voltages of the FPI',
-                'units': unit,
+                'long_name': 'fpi setpoint voltages',
+                'units': 'V',
                 },
             )
 
@@ -93,7 +108,11 @@ def parse_sinvs(s):
             dims=(c.peak_coord, c.colour_coord),
             coords={
                 c.peak_coord: [1, 2, 3],
-                c.colour_coord: ['R', 'G', 'B']}
+                c.colour_coord: ['R', 'G', 'B']},
+            attrs={
+                'long_name': 'dn to spectral energy inversion coefficients',
+                'units': 'J sr-1 m-2 nm-1',
+                }
             )
 
 
