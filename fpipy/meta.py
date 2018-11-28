@@ -60,31 +60,28 @@ def parse_image_meta(meta, layer):
         'long_name': 'Bayer pattern string',
         }
     im_meta[c.image_index] = meta.getint(layer, 'index')
-    im_meta[c.wavelength_data] = parse_peakmeta(
-            meta.get(layer, 'wavelengths'),
-            'peak center wavelength',
-            'nm'
-            )
-    im_meta[c.fwhm_data] = parse_peakmeta(
-            meta.get(layer, 'fwhms'),
-            'full width at half maximum',
-            'nm'
-            )
+    im_meta[c.wavelength_data] = parse_peakmeta(meta.get(layer, 'wavelengths'))
+    im_meta[c.wavelength_data].attrs = {
+            'long_name': 'peak center wavelength',
+            'standard_name': 'radiation_wavelength',
+            'unit': 'nm',
+            }
+    im_meta[c.fwhm_data] = parse_peakmeta(meta.get(layer, 'fwhms'))
+    im_meta[c.fwhm_data].attrs = {
+            'long_name': 'peak full width at half maximum',
+            'unit': 'nm',
+            }
     im_meta[c.setpoint_data] = parse_setpoints(meta.get(layer, 'setpoints'))
     im_meta[c.sinv_data] = parse_sinvs(meta.get(layer, 'sinvs'))
 
     return im_meta
 
 
-def parse_peakmeta(s, name, unit):
+def parse_peakmeta(s):
     return xr.DataArray(
             parsevec(s),
             dims=(c.peak_coord),
             coords={c.peak_coord: [1, 2, 3]},
-            attrs={
-                'long_name': name,
-                'units': unit
-                },
             )
 
 
