@@ -258,7 +258,7 @@ def raw_to_radiance(raw, dataset=True, **kwargs):
 
     # Add CF attributes
     radiances = radiances.assign_attrs({
-        'long_name': 'radiance',
+        'long_name': 'radiance per unit wavelength',
         'units': 'W sr-1 m-2 nm-1',
         })
     # Return a dataset and reset all coordinates to variables
