@@ -107,7 +107,7 @@ def parse_sinvs(s):
                 c.peak_coord: [1, 2, 3],
                 c.colour_coord: ['R', 'G', 'B']},
             attrs={
-                'long_name': 'dn to spectral energy inversion coefficients',
+                'long_name': 'dn to pseudoradiance inversion coefficients',
                 'units': 'J sr-1 m-2 nm-1',
                 }
             )
