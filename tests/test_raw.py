@@ -14,6 +14,35 @@ import fpipy.raw as fpr
 import fpipy.conventions as c
 
 
+def test_read_calibration_matches_ENVI(calib_seq, raw_ENVI):
+    for d in calib_seq.dims:
+        xrt.assert_identical(calib_seq[d], raw_ENVI[d])
+
+    for v in calib_seq.data_vars:
+        xrt.assert_allclose(calib_seq[v], raw_ENVI[v])
+
+
+def test_read_calibration_format(calib_seq):
+    assert type(calib_seq) is xr.Dataset
+
+    # These must be found from each calibration dataset
+    dims = [
+        c.image_index,
+        c.peak_coord,
+        c.colour_coord,
+        ]
+    for d in dims:
+        assert d in calib_seq.dims
+
+    variables = [
+        c.number_of_peaks,
+        c.wavelength_data,
+        c.sinv_data,
+        ]
+    for v in variables:
+        assert v in calib_seq.variables
+
+
 def test_ENVI_rad_format(rad, rad_ENVI):
     assert type(rad_ENVI) is type(rad)
 
