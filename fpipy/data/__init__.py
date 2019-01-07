@@ -5,7 +5,7 @@
 
 import os.path as osp
 from xarray import open_rasterio
-from ..io import read_ENVI_cfa
+from ..io import read_ENVI_cfa, read_calibration
 from .. import conventions as c
 
 
@@ -15,7 +15,18 @@ data_dir = osp.abspath(osp.dirname(__file__))
 __all__ = ['data_dir',
            'house_radiance',
            'house_raw',
+           'house_calibration',
            ]
+
+
+def house_calibration():
+    """Calibration sequence for the house dataset.
+
+    Calibration data for the `house_raw` dataset as read from the camera
+    calibration file (instead of the VTT generated header).
+
+    """
+    return read_calibration(osp.join(data_dir, 'house_calib_seq.txt'))
 
 
 def house_raw():
