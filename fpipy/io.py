@@ -80,16 +80,19 @@ def read_calibration(calibfile, wavelength_unit='nm'):
             }
         )
 
-    ds[c.sinv_data] = xr.concat(
-        [xr.DataArray(df[sinvcols[k*3:k*3+3]],
-         dims=(c.image_index, c.peak_coord),
-         coords={
-             c.image_index: ds[c.image_index],
-             c.peak_coord: ds[c.peak_coord],
-             c.colour_coord: colour
-             })
-         for k, colour in enumerate('RGB')],
-        dim=c.colour_coord)
+    ds[c.sinv_data] = xr.DataArray(
+        df[sinvcols].values.reshape(-1, 3, 3),
+        dims=(c.image_index, c.peak_coord, c.colour_coord),
+        coords={
+            c.image_index: ds[c.image_index],
+            c.peak_coord: ds[c.peak_coord],
+            c.colour_coord: ['R', 'G', 'B'],
+            },
+        attrs={
+            'long_name': 'dn to pseudoradiance inversion coefficients',
+            'units': 'J sr-1 m-2 nm-1',
+            }
+        )
 
     return ds
 
