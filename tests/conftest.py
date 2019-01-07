@@ -4,7 +4,12 @@ import xarray as xr
 import colour_demosaicing as cdm
 
 import fpipy.conventions as c
-from fpipy.data import house_raw, house_radiance
+from fpipy.data import house_raw, house_radiance, house_calibration
+
+
+@pytest.fixture(scope="session")
+def calib_seq():
+    return house_calibration()
 
 
 @pytest.fixture(scope="session")
