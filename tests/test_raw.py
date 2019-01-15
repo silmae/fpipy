@@ -30,6 +30,7 @@ def test_read_calibration_format(calib_seq):
         c.image_index,
         c.peak_coord,
         c.colour_coord,
+        c.setpoint_coord,
         ]
     for d in dims:
         assert d in calib_seq.dims
@@ -37,6 +38,8 @@ def test_read_calibration_format(calib_seq):
     variables = [
         c.number_of_peaks,
         c.wavelength_data,
+        c.fwhm_data,
+        c.setpoint_data,
         c.sinv_data,
         ]
     for v in variables:
@@ -109,6 +112,7 @@ def test_raw_to_radiance_format(raw):
     for d in dims:
         assert d in rad.dims
     variables = [
+        c.radiance_data,
         c.image_index,
         c.peak_coord,
         c.wavelength_data,
