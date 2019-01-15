@@ -131,6 +131,87 @@ def test_raw_to_radiance_correctness(raw, rad):
     xrt.assert_equal(expected, actual)
 
 
+def test_subtract_dark_keep_variables(raw):
+    variables = [
+        c.dark_reference_data,
+        ]
+
+    default = fpr.subtract_dark(raw)
+    keep_all = fpr.subtract_dark(raw, keep_variables=variables)
+
+    for v in variables:
+        assert(v not in default.variables)
+        assert(v in keep_all.variables)
+
+        keep_one = fpr.subtract_dark(raw, keep_variables=[v])
+        assert(v in keep_one.variables)
+
+        for notv in [var for var in variables if var is not v]:
+            assert(notv not in keep_one.variables)
+
+
+def test_raw_to_radiance_keep_variables(raw):
+    variables = [
+        c.cfa_data,
+        c.dark_reference_data,
+        c.rgb_data,
+        ]
+
+    default = fpr.raw_to_radiance(raw)
+    keep_all = fpr.raw_to_radiance(raw, keep_variables=variables)
+
+    for v in variables:
+        assert(v not in default.variables)
+        assert(v in keep_all.variables)
+
+        keep_one = fpr.raw_to_radiance(raw, keep_variables=[v])
+        assert(v in keep_one.variables)
+
+        for notv in [var for var in variables if var is not v]:
+            assert(notv not in keep_one.variables)
+
+
+def test_raw_to_reflectance_keep_variables(raw):
+    variables = [
+        c.cfa_data,
+        c.dark_reference_data,
+        c.rgb_data,
+        c.radiance_data
+        ]
+
+    default = fpr.raw_to_reflectance(raw, raw)
+    keep_all = fpr.raw_to_reflectance(raw, raw, keep_variables=variables)
+
+    for v in variables:
+        assert(v not in default.variables)
+        assert(v in keep_all.variables)
+
+        keep_one = fpr.raw_to_reflectance(raw, raw, keep_variables=[v])
+        assert(v in keep_one.variables)
+
+        for notv in [var for var in variables if var is not v]:
+            assert(notv not in keep_one.variables)
+
+
+def test_radiance_to_reflectance_keep_variables(rad):
+    variables = [
+        c.radiance_data
+        ]
+
+    default = fpr.radiance_to_reflectance(rad, rad)
+    keep_all = fpr.radiance_to_reflectance(rad, rad, keep_variables=variables)
+
+    for v in variables:
+        assert(v not in default.variables)
+        assert(v in keep_all.variables)
+
+        keep_one = fpr.radiance_to_reflectance(rad, rad, keep_variables=[v])
+        assert(v in keep_one.variables)
+
+        for notv in [var for var in variables if var is not v]:
+            assert(notv not in keep_one.variables)
+
+
 def test_subtract_dark_when_needed(raw):
 
     old = raw[c.cfa_data]
