@@ -127,7 +127,7 @@ def _cfa_dataset(
     return res
 
 
-def raw_to_reflectance(raw, whiteraw, dataset=True):
+def raw_to_reflectance(raw, whiteraw, keep_variables=None):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -149,9 +149,10 @@ def raw_to_reflectance(raw, whiteraw, dataset=True):
         Demosaicing method. Default is bilinear. See the `colour_demosaicing`
         package for more info on the different methods.
 
-    dataset: boolean, optional
-        Wether the function should return radiance and reflectance together as
-        a Dataset. Default is True.
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the intermediate data, pass the relevant
+        names from `fpipy.conventions`.
 
     Returns
     -------
@@ -159,15 +160,16 @@ def raw_to_reflectance(raw, whiteraw, dataset=True):
         Includes computed radiance and reflectance as data variables sorted by
         wavelength or just the reflectance DataArray.
     """
-    radiance = raw_to_radiance(raw)
-    white = raw_to_radiance(whiteraw)
-    return radiance_to_reflectance(radiance, white, dataset=dataset)
+    radiance = raw_to_radiance(raw, keep_variables=keep_variables)
+    white = raw_to_radiance(whiteraw, keep_variables=keep_variables)
+    return radiance_to_reflectance(
+            radiance, white,
+            keep_variables=keep_variables
+            )
 
 
-def radiance_to_reflectance(radiance, white, dataset=True):
-    """Computes reflectance from radiance and a white reference cube. The
-    assumptions about when an user wants DataArray and when do they want
-    Dataset may have to be looked into in the future.
+def radiance_to_reflectance(radiance, white, keep_variables=None):
+    """Computes reflectance from radiance and a white reference cube.
 
     Parameters
     ----------
@@ -176,34 +178,30 @@ def radiance_to_reflectance(radiance, white, dataset=True):
     white : xarray.Dataset
         White reference image
 
-    dataset: boolean, optional
-        Wether the function should return radiance and reflectance together as
-        a Dataset. Default is True.
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the intermediate data, pass the relevant
+        names from `fpipy.conventions`.
 
     Returns
     -------
-    reflectance: xarray.Datarray or xarray.Dataset
+    reflectance: xarray.Dataset
         Reflectance = Radiance / White_Radiance.
     """
-    if hasattr(white, c.cfa_data):
-        warn('Converting white from raw to radiance automatically!')
-        white = raw_to_radiance(white)
 
     radiance[c.reflectance_data] = (
             radiance[c.radiance_data] / white[c.radiance_data]
             )
 
-    radiance = radiance.assign_attrs({
+    radiance[c.reflectance_data] = radiance[c.reflectance_data].assign_attrs({
         'long_name': 'reflectance',
         'units': '1',
         })
-    if dataset is False:
-        return radiance[c.reflectance_data]
-    else:
-        return radiance
+
+    return _drop_variable(radiance, c.radiance_data, keep_variables)
 
 
-def raw_to_radiance(raw, dataset=True, **kwargs):
+def raw_to_radiance(raw, **kwargs):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -222,15 +220,16 @@ def raw_to_radiance(raw, dataset=True, **kwargs):
         Demosaicing method. Default is 'bilinear'. See the `colour_demosaicing`
         package for more info on the different methods.
 
-    dataset: boolean, optional
-        Wether the function should return radiance and reflectance together as
-        a Dataset. Default is True.
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the intermediate data, pass the relevant
+        names from `fpipy.conventions`.
 
     Returns
     -------
-    radiances: xarray.Dataset or xarray.DataArray
-        Includes computed radiance sorted by wavelength. Passes along relevant
-        attributes from input raw.
+    radiances: xarray.Dataset
+        Includes computed radiance sorted by wavelength along with original
+        metadata.
     """
     # Calculate radiances from each mosaic image (see _raw_to_rad)
     radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
@@ -256,22 +255,12 @@ def raw_to_radiance(raw, dataset=True, **kwargs):
             **{c.band_index: radiances[c.band_index]}
             )
 
-    # Add CF attributes
-    radiances = radiances.assign_attrs({
-        'long_name': 'radiance per unit wavelength',
-        'units': 'W sr-1 m-2 nm-1',
-        })
-    # Return a dataset and reset all coordinates to variables
-    # (keeping only the dimension coordinates)
-    radiances = radiances.to_dataset(name=c.radiance_data)
+    # Keep only dimensions as coordinates
     radiances = radiances.reset_coords()
-
-    if dataset is False:
-        return radiances[c.radiance_data]  # We have lost wavelength by now :((
     return radiances
 
 
-def _raw_to_rad(raw, dark=None, dm_method='bilinear'):
+def _raw_to_rad(raw, dark=None, dm_method='bilinear', keep_variables=None):
     """Compute all passband peaks from given raw image data.
 
     Applies subtract_dark, _raw_to_rgb and _rgb_to_rad
@@ -289,6 +278,11 @@ def _raw_to_rad(raw, dark=None, dm_method='bilinear'):
     dm_method : str, optional
         Demosaicing method passed to _rgb_to_rad. Default 'bilinear'.
 
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the intermediate data, pass the relevant
+        names from `fpipy.conventions`.
+
     Returns
     -------
     res: xr.Dataset
@@ -296,15 +290,15 @@ def _raw_to_rad(raw, dark=None, dm_method='bilinear'):
 
     """
     return raw.pipe(
-                subtract_dark, dark
+                subtract_dark, dark, keep_variables
             ).pipe(
-                _raw_to_rgb, dm_method
+                _raw_to_rgb, dm_method, keep_variables
             ).pipe(
-                _rgb_to_rad
+                _rgb_to_rad, keep_variables
             )
 
 
-def _raw_to_rgb(raw, dm_method):
+def _raw_to_rgb(raw, dm_method, keep_variables=None):
     """Demosaic a dataset of CFA data.
 
     Parameters
@@ -312,6 +306,11 @@ def _raw_to_rgb(raw, dm_method):
     raw: xr.Dataset
         Dataset containing variable cfa and mosaic pattern information, either
         as a variable or an attribute of the cfa variable.
+
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the raw CFA data, pass a list including
+        `fpipy.conventions.cfa_data`.
 
     Returns
     -------
@@ -329,10 +328,10 @@ def _raw_to_rgb(raw, dm_method):
             dm_method
             )
 
-    return raw
+    return _drop_variable(raw, c.cfa_data, keep_variables)
 
 
-def _rgb_to_rad(rgb):
+def _rgb_to_rad(rgb, keep_variables=None):
     """Calculate all possible radiance bands from a given RGB image.
 
     Parameters
@@ -340,6 +339,11 @@ def _rgb_to_rad(rgb):
     rgb: xr.DataSet
         Dataset containing as variables RGB image, exposure and radiance
         inversion information.
+
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the RGB data, pass a list including
+        `fpipy.conventions.rgb_data`.
 
     Returns
     -------
@@ -354,35 +358,37 @@ def _rgb_to_rad(rgb):
     else:
         exposure = rgb[c.camera_exposure].values
 
-    # Preserve metadata by setting them as coordinates
-    preserved_data = [
-            c.wavelength_data,
-            c.fwhm_data,
-            c.number_of_peaks
-            ]
-    rgb = rgb.set_coords([c for c in preserved_data if c in rgb])
-
     # Select only peaks that have data (as defined by c.number_of_peaks)
     rgb = rgb.sel(
         **{c.peak_coord: rgb[c.peak_coord] <= rgb[c.number_of_peaks]}
         )
 
     # Compute the inversion to radiance and scale by exposure time
-    radiance = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
-    return radiance
+    rgb[c.radiance_data] = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
+
+    # Add CF attributes
+    rgb[c.radiance_data] = rgb[c.radiance_data].assign_attrs({
+        'long_name': 'radiance per unit wavelength',
+        'units': 'W sr-1 m-2 nm-1',
+        })
+
+    return _drop_variable(rgb, c.rgb_data, keep_variables)
 
 
 def subtract_dark(
         data,
         dark=None,
-        dc_attr=c.dc_included_attr):
+        keep_variables=None
+        ):
     """Subtracts dark current reference from image data.
 
     Subtracts a dark reference frame from all the layers in the given data
     and clamps any negative values in the result to zero. If the input data
     already indicates it has had dark current subtracted (having
-    the attribute `fpipy.conventions.dc_included_attr` set to true), it
-    simply passes the data through and gives a UserWarning.
+    the attribute `fpipy.conventions.dc_included_attr` set to false), it
+    simply passes the data through and gives a UserWarning. Otherwise,
+    dark current is subtracted and the result will have the attribute set to
+    false.
 
     Parameters
     ----------
@@ -393,10 +399,10 @@ def subtract_dark(
         Dark current reference measurement. If not given, tries to use
         data[c.dark_reference_data].
 
-    dc_attr: str, optional
-        Attribute to use for checking whether the data includes dark current,
-        and to set False afterwards. Default is
-        `fpipy.conventions.dc_included_attr`.
+    keep_variables: list-like, optional
+        List of variables to keep in the result, default None.
+        If you wish to keep the dark reference data, pass a list including
+        `fpipy.conventions.dark_reference`.
 
     Returns
     -------
@@ -405,6 +411,7 @@ def subtract_dark(
         Negative values are clamped to 0.
 
     """
+    dc_attr = c.dc_included_attr
     if (dc_attr in data[c.cfa_data].attrs and
        not data[c.cfa_data].attrs[dc_attr]):
         warn(UserWarning(
@@ -419,7 +426,7 @@ def subtract_dark(
                 )
         data[c.cfa_data].attrs[dc_attr] = False
 
-    return data
+    return _drop_variable(data, c.dark_reference_data, keep_variables)
 
 
 def _subtract_clip(x, y):
@@ -484,3 +491,29 @@ def demosaic(cfa, pattern, dm_method):
         output_core_dims=[(c.RGB_dims)])
     res.coords[c.colour_coord] = ['R', 'G', 'B']
     return res
+
+
+def _drop_variable(ds, variable, keep_variables):
+    """Drop a given variable from the dataset unless whitelisted.
+
+    Parameters
+    ----------
+
+    ds : xr.Dataset
+        Dataset to drop variable from.
+
+    variable : str
+        Variable name to drop.
+
+    keep_variables : list-like
+        Whitelist of variables to keep.
+
+    Returns
+    -------
+    xr.Dataset
+        Original dataset with or without the given variable.
+    """
+    if not keep_variables or variable not in keep_variables:
+        return ds.drop(variable)
+    else:
+        return ds
