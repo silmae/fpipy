@@ -148,7 +148,7 @@ def test_reflectance_is_sensible(raw):
     """Reflectance should be 1 if dataset is used as its own white reference
     unless the reflectance is 0/0 = NaN.
     """
-    ref = fpr.raw_to_reflectance(raw, raw)
+    ref = fpr.raw_to_reflectance(raw, raw, keep_variables=[c.radiance_data])
 
     target = xr.DataArray(np.ones(ref[c.reflectance_data].shape),
                           dims=ref[c.reflectance_data].dims,
