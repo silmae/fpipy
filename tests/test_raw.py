@@ -249,10 +249,3 @@ def test_reflectance_is_sensible(raw):
     target.values[ref[c.radiance_data].values == 0] = np.nan
 
     xrt.assert_equal(ref[c.reflectance_data], target)
-# def test_subtract_clip():
-#    old =
-#    new =
-#    assert new.dtype is old.dtype
-#    assert np.(new <= old)
-#    assert np.all(new >= 0)
-#    assert new.shape == old.shape
