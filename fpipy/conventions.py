@@ -29,8 +29,11 @@ radiance_data = 'radiance'
 reflectance_data = 'reflectance'
 """DataArray containing a stack of reflectance images."""
 
-cfa_data = 'cfa'
-"""DataArray containing a stack of CFA images."""
+cfa_data = 'dn'
+"""DataArray containing a stack of raw CFA images."""
+
+dark_corrected_cfa_data = 'dn_dark_corrected'
+"""DataArray containing a stack of raw images with dark current corrected"""
 
 rgb_data = 'rgb'
 """DataArray containing a stack of RGB images."""
