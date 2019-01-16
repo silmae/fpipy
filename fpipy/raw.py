@@ -18,7 +18,6 @@ Calculating radiances from raw data and plotting them can be done as follows::
     rad.swap_dims({'band': 'wavelength'}).radiance.sel(wavelength=600,
                                                       method='nearest').plot()
 """
-from warnings import warn
 from enum import IntEnum
 import xarray as xr
 import colour_demosaicing as cdm
@@ -158,7 +157,7 @@ def raw_to_radiance(raw, **kwargs):
     return radiances
 
 
-def _raw_to_rad(raw, dark=None, dm_method='bilinear', keep_variables=None):
+def _raw_to_rad(raw, dm_method='bilinear', keep_variables=None):
     """Compute all passband peaks from given raw image data.
 
     Applies subtract_dark, _raw_to_rgb and _rgb_to_rad
@@ -167,11 +166,8 @@ def _raw_to_rad(raw, dark=None, dm_method='bilinear', keep_variables=None):
     Parameters
     ----------
     raw : xr.Dataset
-        Dataset containing raw CFA data to be passed through
-        `subtract_dark`, `_raw_to_rgb` and `_rgb_to_rad`.
-
-    dark : array-like, optional
-        Dark reference passed to _subtract_dark. Default None.
+        Dataset containing raw CFA data and the dark reference
+        to be passed through `subtract_dark`, `_raw_to_rgb` and `_rgb_to_rad`.
 
     dm_method : str, optional
         Demosaicing method passed to _rgb_to_rad. Default 'bilinear'.
@@ -188,7 +184,7 @@ def _raw_to_rad(raw, dark=None, dm_method='bilinear', keep_variables=None):
 
     """
     return raw.pipe(
-                subtract_dark, dark, keep_variables
+                subtract_dark, keep_variables
             ).pipe(
                 _raw_to_rgb, dm_method, keep_variables
             ).pipe(
@@ -202,8 +198,8 @@ def _raw_to_rgb(raw, dm_method, keep_variables=None):
     Parameters
     ----------
     raw: xr.Dataset
-        Dataset containing variable cfa and mosaic pattern information, either
-        as a variable or an attribute of the cfa variable.
+        Dataset containing `c.dark_corrected_cfa_data` and mosaic pattern
+        information either as a variable or an attribute of the cfa variable.
 
     keep_variables: list-like, optional
         List of variables to keep in the result, default None.
@@ -215,18 +211,18 @@ def _raw_to_rgb(raw, dm_method, keep_variables=None):
     res: xr.Dataset
         Dataset containing the demosaiced R, G and B layers as a variable.
     """
-    if c.cfa_pattern_data in raw[c.cfa_data].attrs:
-        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
+    if c.cfa_pattern_data in raw[c.dark_corrected_cfa_data].attrs:
+        pattern = str(raw[c.dark_corrected_cfa_data].attrs[c.cfa_pattern_data])
     else:
         pattern = str(raw[c.cfa_pattern_data].values)
 
     raw[c.rgb_data] = demosaic(
-            raw[c.cfa_data],
+            raw[c.dark_corrected_cfa_data],
             pattern,
             dm_method
             )
 
-    return _drop_variable(raw, c.cfa_data, keep_variables)
+    return _drop_variable(raw, c.dark_corrected_cfa_data, keep_variables)
 
 
 def _rgb_to_rad(rgb, keep_variables=None):
@@ -273,14 +269,10 @@ def _rgb_to_rad(rgb, keep_variables=None):
     return _drop_variable(rgb, c.rgb_data, keep_variables)
 
 
-def subtract_dark(
-        data,
-        dark=None,
-        keep_variables=None
-        ):
+def subtract_dark(ds, keep_variables=None):
     """Subtracts dark current reference from image data.
 
-    Subtracts a dark reference frame from all the layers in the given data
+    Subtracts a dark reference frame from all the layers in the given raw data
     and clamps any negative values in the result to zero. If the input data
     already indicates it has had dark current subtracted (having
     the attribute `fpipy.conventions.dc_included_attr` set to false), it
@@ -290,41 +282,31 @@ def subtract_dark(
 
     Parameters
     ----------
-    data: xarray.DataSet
-        Dataset containing the raw images (including dark current).
-
-    dark: array-like, optional
-        Dark current reference measurement. If not given, tries to use
-        data[c.dark_reference_data].
+    ds: xarray.DataSet
+        Dataset containing the raw images in `fpipy.conventions.cfa_data`
+        and the dark current reference measurement as
+        `fpipy.conventions.dark_reference_data`.
 
     keep_variables: list-like, optional
         List of variables to keep in the result, default None.
-        If you wish to keep the dark reference data, pass a list including
-        `fpipy.conventions.dark_reference`.
+        If you wish to keep the dark reference data and/or the original raw
+        images, pass a list including the variable names.
 
     Returns
     -------
-    refarray: xarray.Dataset
-        Data from which the dark current reference has been subtracted.
-        Negative values are clamped to 0.
+    xarray.Dataset
+        Dataset with the dark corrected data as
+        `fpipy.conventions.dark_corrected_cfa_data`
 
     """
-    dc_attr = c.dc_included_attr
-    if (dc_attr in data[c.cfa_data].attrs and
-       not data[c.cfa_data].attrs[dc_attr]):
-        warn(UserWarning(
-            ('Data already has {} set to False,'
-             'skipping dark subtraction').format(dc_attr)))
-    else:
-        if dark is None:
-            dark = data[c.dark_reference_data]
 
-        data[c.cfa_data] = xr.apply_ufunc(
-                _subtract_clip, data[c.cfa_data], dark
-                )
-        data[c.cfa_data].attrs[dc_attr] = False
+    ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
+            _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data]
+            )
 
-    return _drop_variable(data, c.dark_reference_data, keep_variables)
+    ds = _drop_variable(ds, c.cfa_data, keep_variables)
+    ds = _drop_variable(ds, c.dark_reference_data, keep_variables)
+    return ds
 
 
 def _subtract_clip(x, y):

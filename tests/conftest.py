@@ -84,12 +84,15 @@ def cfa(size, pattern):
     return cfa
 
 
-@pytest.fixture(
-    params=[True, False]
-    )
-def dark(request, size):
+@pytest.fixture(params=[0, 1])
+def dark_level(request):
+    return request.param
+
+
+@pytest.fixture
+def dark(size, dark_level):
     _, y, x = size
-    return request.param, np.ones((y, x), dtype=np.uint16)
+    return np.full((y, x), dark_level, dtype=np.uint16)
 
 
 @pytest.fixture(params=[1, 0.5, [1, 0.5]])
@@ -109,12 +112,10 @@ def gain(request):
 def raw(cfa, dark, pattern, exposure, gain, metas):
     b, y, x = cfa.shape
     sinvs, npeaks, wls = metas
-    dc_included, dref = dark
 
     data = xr.DataArray(
         cfa,
         dims=c.cfa_dims,
-        attrs={c.dc_included_attr: dc_included}
         )
 
     if not np.isscalar(exposure):
@@ -123,12 +124,9 @@ def raw(cfa, dark, pattern, exposure, gain, metas):
     raw = xr.Dataset(
         data_vars={
             c.cfa_data: data,
-            c.dark_reference_data: (c.dark_ref_dims, dref),
+            c.dark_reference_data: (c.dark_ref_dims, dark),
             c.number_of_peaks: (c.image_index, npeaks),
-            c.sinv_data: (
-                (c.image_index, c.peak_coord, c.colour_coord),
-                sinvs
-                ),
+            c.sinv_data: (c.sinv_dims, sinvs),
             c.cfa_pattern_data: pattern,
             c.camera_exposure: exposure,
             c.camera_gain: gain,
@@ -145,16 +143,16 @@ def raw(cfa, dark, pattern, exposure, gain, metas):
 
 
 @pytest.fixture
-def rad(cfa, dark, exposure, metas):
+def rad(cfa, dark_level, exposure, metas):
     k, y, x = cfa.shape
     _, npeaks, _ = metas
-    hasdark, _ = dark
     b = np.sum(npeaks)
 
-    if hasdark:
-        values = np.array([4, 1, 0, 5, 4, 1], dtype=np.float64)
-    else:
-        values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
+    # Purposefully computed by hand
+    # Currently only works for the dark levels 0, 1
+    values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
+    dark_rad = dark_level * np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
+    values = values - dark_rad
 
     if np.isscalar(exposure):
         values = values / exposure

@@ -3,9 +3,6 @@
 
 """Tests for `fpipy.raw` module."""
 
-import pytest
-
-from numpy.testing import assert_array_equal
 import numpy as np
 import xarray as xr
 import xarray.testing as xrt
@@ -94,16 +91,6 @@ def test_raw_format(raw):
         assert v in raw.variables
 
 
-def test_raw_dark_inclusion(raw):
-    # If a dataset contains data and a dark current reference, it must indicate
-    # whether it has been subtracted already
-
-    if (c.cfa_data in raw.variables and
-       c.dark_reference_data in raw.variables):
-        assert c.dc_included_attr in raw[c.cfa_data].attrs
-        assert type(raw[c.cfa_data].attrs[c.dc_included_attr]) is bool
-
-
 def test_raw_to_radiance_format(raw):
     rad = fpr.raw_to_radiance(raw)
     assert type(rad) is xr.Dataset
@@ -142,6 +129,7 @@ def test_raw_to_radiance_correctness(raw, rad):
 def test_subtract_dark_keep_variables(raw):
     variables = [
         c.dark_reference_data,
+        c.cfa_data,
         ]
 
     default = fpr.subtract_dark(raw)
@@ -161,6 +149,7 @@ def test_subtract_dark_keep_variables(raw):
 def test_raw_to_radiance_keep_variables(raw):
     variables = [
         c.cfa_data,
+        c.dark_corrected_cfa_data,
         c.dark_reference_data,
         c.rgb_data,
         ]
@@ -218,23 +207,6 @@ def test_radiance_to_reflectance_keep_variables(rad):
 
         for notv in [var for var in variables if var is not v]:
             assert(notv not in keep_one.variables)
-
-
-def test_subtract_dark_when_needed(raw):
-
-    old = raw[c.cfa_data]
-
-    if old.attrs[c.dc_included_attr]:
-        new = fpr.subtract_dark(raw)[c.cfa_data]
-        assert_array_equal(new, fpr._subtract_clip(old, 1))
-    else:
-        with pytest.warns(
-                UserWarning,
-                match='has {} set to False'.format(c.dc_included_attr)):
-            new = fpr.subtract_dark(raw)[c.cfa_data]
-            assert_array_equal(new, old)
-
-    assert new.attrs[c.dc_included_attr] is False
 
 
 def test_reflectance_is_sensible(raw):
