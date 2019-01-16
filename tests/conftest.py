@@ -97,8 +97,13 @@ def exposure(request):
     return request.param
 
 
+@pytest.fixture(params=[2])
+def gain(request):
+    return request.param
+
+
 @pytest.fixture
-def raw(cfa, dark, pattern, exposure, metas):
+def raw(cfa, dark, pattern, exposure, gain, metas):
     b, y, x = cfa.shape
     sinvs, npeaks, wls = metas
     dc_included, dref = dark
@@ -119,6 +124,7 @@ def raw(cfa, dark, pattern, exposure, metas):
                 ),
             c.cfa_pattern_data: pattern,
             c.camera_exposure: exposure,
+            c.camera_gain: gain,
             c.wavelength_data: ((c.image_index, c.peak_coord), wls),
             },
         coords={
