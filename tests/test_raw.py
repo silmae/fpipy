@@ -84,6 +84,7 @@ def test_raw_format(raw):
     variables = [
         c.number_of_peaks,
         c.camera_exposure,
+        c.camera_gain,
         c.cfa_pattern_data,
         c.wavelength_data,
         c.sinv_data,
@@ -111,11 +112,17 @@ def test_raw_to_radiance_format(raw):
     dims = c.radiance_dims
     for d in dims:
         assert d in rad.dims
+
     variables = [
         c.radiance_data,
         c.image_index,
         c.peak_coord,
+        c.number_of_peaks,
+        c.camera_exposure,
+        c.camera_gain,
+        c.cfa_pattern_data,
         c.wavelength_data,
+        c.sinv_data,
         ]
     for v in variables:
         assert v in rad.variables
