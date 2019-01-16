@@ -30,21 +30,16 @@ def raw_to_reflectance(raw, whiteraw, keep_variables=None):
     Parameters
     ----------
     raw : xarray.Dataset
-        Requires data that includes cfa, npeaks, sinvs, wavelength, fwhm
-        exposure.
+        A dataset containing the following variables:
+        `c.cfa_data`,
+        `c.dark_reference_data`,
+        `c.sinv_data`,
+        `c.wavelength_data´,
+        `c.fwhm_data`
+        `c.camera_exposure`
 
     white : xarray.Dataset
         Same as raw but for a cube that describes a white reference target.
-
-    pattern : BayerPattern or str, optional
-        Bayer pattern used to demosaic the CFA.
-        Can be supplied to override the file metadata value in cases where it
-        is missing or incorrect.
-
-    dm_method : str, optional
-        **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
-        Demosaicing method. Default is bilinear. See the `colour_demosaicing`
-        package for more info on the different methods.
 
     keep_variables: list-like, optional
         List of variables to keep in the result, default None.
@@ -104,8 +99,13 @@ def raw_to_radiance(raw, **kwargs):
     Parameters
     ----------
     raw : xarray.Dataset
-        A dataset containing the variables
-        cfa, sinvs, wavelength, fwhm and exposure.
+        A dataset containing the following variables:
+        `c.sinv_data`,
+        `c.wavelength_data´,
+        `c.fwhm_data`
+        `c.camera_exposure`
+        `c.cfa_data`,
+        `c.dark_reference_data`,
 
     pattern : BayerPattern or str, optional
         Bayer pattern used to demosaic the CFA.
@@ -128,6 +128,7 @@ def raw_to_radiance(raw, **kwargs):
         Includes computed radiance sorted by wavelength along with original
         metadata.
     """
+
     # Calculate radiances from each mosaic image (see _raw_to_rad)
     radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
 
@@ -273,12 +274,9 @@ def subtract_dark(ds, keep_variables=None):
     """Subtracts dark current reference from image data.
 
     Subtracts a dark reference frame from all the layers in the given raw data
-    and clamps any negative values in the result to zero. If the input data
-    already indicates it has had dark current subtracted (having
-    the attribute `fpipy.conventions.dc_included_attr` set to false), it
-    simply passes the data through and gives a UserWarning. Otherwise,
-    dark current is subtracted and the result will have the attribute set to
-    false.
+    and clamps any negative values in the result to zero. The result is stored
+    in the dataset as the variable `c.dark_corrected_cfa_data` which is
+    overwritten if it exists.
 
     Parameters
     ----------
@@ -342,11 +340,10 @@ def demosaic(cfa, pattern, dm_method):
     Parameters
     ----------
     cfa: xarray.DataArray
+        Array containing a stack of CFA images.
 
-    pattern: BayerPattern or str, optional
+    pattern: BayerPattern or str
         Bayer pattern used to demosaic the CFA.
-        Can be supplied to override the file metadata value in cases where it
-        is missing or incorrect.
 
     dm_method: str
 
