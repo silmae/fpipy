@@ -92,9 +92,12 @@ def dark(request, size):
     return request.param, np.ones((y, x), dtype=np.uint16)
 
 
-@pytest.fixture(params=[1, 0.5])
-def exposure(request):
-    return request.param
+@pytest.fixture(params=[1, 0.5, [1, 0.5]])
+def exposure(request, size):
+    if np.isscalar(request.param):
+        return request.param
+    else:
+        return np.tile(request.param, size[0] // 2 + 1)[:size[0]]
 
 
 @pytest.fixture(params=[2])
@@ -113,6 +116,10 @@ def raw(cfa, dark, pattern, exposure, gain, metas):
         dims=c.cfa_dims,
         attrs={c.dc_included_attr: dc_included}
         )
+
+    if not np.isscalar(exposure):
+        exposure = (c.image_index, exposure[:b])
+
     raw = xr.Dataset(
         data_vars={
             c.cfa_data: data,
@@ -149,9 +156,17 @@ def rad(cfa, dark, exposure, metas):
     else:
         values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
 
+    if np.isscalar(exposure):
+        values = values / exposure
+    else:
+        idxs = [0, 1, 2, 1, 2, 2][:b]
+        exps = exposure[idxs]
+        values = values / exps
+
     values = values.reshape(-1, 1, 1)
     values = np.tile(values, (b // 6 + 1, 1, 1))[:b]
-    data = np.kron(np.ones((y, x), dtype=np.float64), values) / exposure
+
+    data = np.kron(np.ones((y, x), dtype=np.float64), values)
     wls = wavelengths(b)
 
     rad = xr.Dataset(
