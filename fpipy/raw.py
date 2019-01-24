@@ -371,8 +371,7 @@ def demosaic(cfa, pattern, dm_method):
     -------
     xarray.DataArray
     """
-    if type(pattern) is BayerPattern:
-        pattern = pattern.name
+    pattern = BayerPattern.get(pattern).name
 
     dm_methods = {
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
