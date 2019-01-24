@@ -6,12 +6,53 @@
 import pytest
 
 from numpy.testing import assert_array_equal
+import numpy as np
 import xarray as xr
 import xarray.testing as xrt
 
 import fpipy.raw as fpr
 import fpipy.conventions as c
 from fpipy.raw import BayerPattern
+
+
+def test_read_calibration_matches_ENVI(calib_seq, raw_ENVI):
+    for d in calib_seq.dims:
+        xrt.assert_identical(calib_seq[d], raw_ENVI[d])
+
+    for v in calib_seq.data_vars:
+        xrt.assert_allclose(calib_seq[v], raw_ENVI[v])
+
+
+def test_read_calibration_format(calib_seq):
+    assert type(calib_seq) is xr.Dataset
+
+    # These must be found from each calibration dataset
+    dims = [
+        c.image_index,
+        c.peak_coord,
+        c.colour_coord,
+        ]
+    for d in dims:
+        assert d in calib_seq.dims
+
+    variables = [
+        c.number_of_peaks,
+        c.wavelength_data,
+        c.sinv_data,
+        ]
+    for v in variables:
+        assert v in calib_seq.variables
+
+
+def test_ENVI_rad_format(rad, rad_ENVI):
+    assert type(rad_ENVI) is type(rad)
+
+    for dim in rad.dims:
+        assert dim in rad_ENVI.dims
+    for coord in rad.coords:
+        assert coord in rad_ENVI.coords
+    for variable in rad.variables:
+        assert variable in rad_ENVI.variables
 
 
 def test_ENVI_raw_format(raw, raw_ENVI):
@@ -85,8 +126,6 @@ def test_raw_to_radiance_format(raw):
 
 
 def test_raw_to_radiance_correctness(raw, rad):
-    print(raw.cfa.shape)
-    print(rad.radiance.shape)
     expected = rad[c.radiance_data].isel(
             x=slice(1, -2), y=slice(1, -2)
             ).transpose(c.band_index, c.height_coord, c.width_coord)
@@ -112,6 +151,19 @@ def test_subtract_dark_when_needed(raw):
 
     assert new.attrs[c.dc_included_attr] is False
 
+
+def test_reflectance_is_sensible(raw):
+    """Reflectance should be 1 if dataset is used as its own white reference
+    unless the reflectance is 0/0 = NaN.
+    """
+    ref = fpr.raw_to_reflectance(raw, raw)
+
+    target = xr.DataArray(np.ones(ref[c.reflectance_data].shape),
+                          dims=ref[c.reflectance_data].dims,
+                          coords=ref[c.reflectance_data].coords)
+    target.values[ref[c.radiance_data].values == 0] = np.nan
+
+    xrt.assert_equal(ref[c.reflectance_data], target)
 # def test_subtract_clip():
 #    old =
 #    new =

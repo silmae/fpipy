@@ -26,6 +26,9 @@ colour_coord = 'colour'
 radiance_data = 'radiance'
 """DataArray containing a stack of radiance images."""
 
+reflectance_data = 'reflectance'
+"""DataArray containing a stack of reflectance images."""
+
 cfa_data = 'cfa'
 """DataArray containing a stack of CFA images."""
 
@@ -76,5 +79,5 @@ radiance_dims = (band_index, height_coord, width_coord)
 RGB_dims = (height_coord, width_coord, colour_coord)
 """Convention for RGB images."""
 
-sinv_dims = (colour_coord, image_index, peak_coord)
+sinv_dims = (image_index, peak_coord, colour_coord)
 """Convention for inversion coefficient dimensions."""

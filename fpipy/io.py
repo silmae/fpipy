@@ -11,8 +11,25 @@ from .meta import parse_meta_to_ds
 from . import conventions as c
 
 
-def read_calibration(calibfile):
-    """Read calibration data from a CSV file and return an `xr.Dataset`."""
+def read_calibration(calibfile, wavelength_unit='nm'):
+    """Read a CSV calibration file to a structured dataset.
+
+    Parameters
+    ----------
+    calibfile : str
+        Filepath to the CSV file containing the metadata. The CSV is assumed to
+        have the following columns (case-sensitive, in no specific order):
+        ['Npeaks', 'SP1', 'SP2', 'SP3', 'PeakWL', 'FWHM', 'Sinv']
+
+    wavelength_unit : str, optional
+        Unit of the wavelength data in the calibration file.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset containing the calibration data in a structured format.
+
+    """
 
     df = pd.read_csv(calibfile, delimiter='\t', index_col='index')
 
@@ -42,6 +59,11 @@ def read_calibration(calibfile):
         coords={
             c.image_index: ds[c.image_index],
             c.peak_coord: ds[c.peak_coord]
+            },
+        attrs={
+            'units': wavelength_unit,
+            'long_name': 'peak center wavelength',
+            'standard_name': 'radiation_wavelength',
             }
         )
 
@@ -51,19 +73,26 @@ def read_calibration(calibfile):
         coords={
             c.image_index: ds[c.image_index],
             c.peak_coord: ds[c.peak_coord]
+            },
+        attrs={
+            'units': wavelength_unit,
+            'long_name': 'full width at half maximum'
             }
         )
 
-    ds[c.sinv_data] = xr.concat(
-        [xr.DataArray(df[sinvcols[k*3:k*3+3]],
-         dims=(c.image_index, c.peak_coord),
-         coords={
-             c.image_index: ds[c.image_index],
-             c.peak_coord: ds[c.peak_coord],
-             c.colour_coord: colour
-             })
-         for k, colour in enumerate('RGB')],
-        dim=c.colour_coord)
+    ds[c.sinv_data] = xr.DataArray(
+        df[sinvcols].values.reshape(-1, 3, 3),
+        dims=(c.image_index, c.peak_coord, c.colour_coord),
+        coords={
+            c.image_index: ds[c.image_index],
+            c.peak_coord: ds[c.peak_coord],
+            c.colour_coord: ['R', 'G', 'B'],
+            },
+        attrs={
+            'long_name': 'dn to pseudoradiance inversion coefficients',
+            'units': 'J sr-1 m-2 nm-1',
+            }
+        )
 
     return ds
 
@@ -80,7 +109,7 @@ def read_hdt(hdtfile):
     return parse_meta_to_ds(meta)
 
 
-def read_ENVI_cfa(filepath):
+def read_ENVI_cfa(filepath, raw_unit='dn'):
     """Read ENVI format CFA data and metadata to an xarray Dataset.
 
     For the VTT format raw ENVI files the ENVI metadata is superfluous and is
@@ -94,6 +123,9 @@ def read_ENVI_cfa(filepath):
     filepath : str
         Path to the datafile to be opened, either with or without extension.
         Expects data and metadata to have extensions .dat and .hdt.
+
+    raw_unit : str, optional
+        Units for the raw data.
 
     Returns
     -------
@@ -123,7 +155,7 @@ def read_ENVI_cfa(filepath):
                 envi.values[0, ::],
                 dims=c.dark_ref_dims,
                 coords={c.height_coord: envi['y'], c.width_coord: envi['x']},
-                name='Dark reference'
+                attrs={'units': raw_unit}
                 )
         ds[c.cfa_data] = (c.cfa_dims, envi.values[1:, ::])
         ds[c.cfa_data].attrs[c.dc_included_attr] = True
@@ -132,4 +164,6 @@ def read_ENVI_cfa(filepath):
         # current (only that there was no reference).
         ds[c.cfa_data] = (c.cfa_dims, envi.values)
 
+    # Set units for the CFA
+    ds[c.cfa_data].attrs['units'] = raw_unit
     return ds

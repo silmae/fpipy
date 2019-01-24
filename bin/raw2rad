@@ -48,7 +48,7 @@ out_formats = {
 
 
 default_format = 'netCDF'
-default_prefix = '_RAD'
+default_prefix = 'RAD_'
 default_dir = '.'
 
 parser = argparse.ArgumentParser(
