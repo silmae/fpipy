@@ -342,6 +342,13 @@ class BayerPattern(IntEnum):
     BayerBG = 2
     BayerRG = 3
 
+    @classmethod
+    def get(self, pattern):
+        try:
+            return self[pattern]
+        except (KeyError, AttributeError):
+            return self(pattern)
+
     def __str__(self):
         return self.name
 
