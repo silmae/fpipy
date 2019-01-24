@@ -4,6 +4,7 @@ import xarray as xr
 import colour_demosaicing as cdm
 
 import fpipy.conventions as c
+from fpipy.raw import BayerPattern
 from fpipy.data import house_raw, house_radiance, house_calibration
 
 
@@ -66,8 +67,10 @@ def size(request):
 
 
 @pytest.fixture(
-    params=['GBRG', 'GRBG', 'BGGR', 'RGGB']
-    )
+    params=[
+        'GBRG', 'GRBG', 'BGGR', 'RGGB',
+        'BayerGB', 'BayerGR', 'BayerBG', 'BayerRG'
+        ])
 def pattern(request):
     return request.param
 
@@ -76,6 +79,7 @@ def pattern(request):
 def cfa(size, pattern):
     b, y, x = size
 
+    pattern = BayerPattern.get(pattern).name
     masks = cdm.bayer.masks_CFA_Bayer((y, x), pattern)
     cfa = np.zeros(size, dtype=np.uint16)
     cfa[:, masks[0]] = 1  # Red
