@@ -318,10 +318,16 @@ def _raw_to_rgb(raw, dm_method):
     res: xr.Dataset
         Dataset containing the demosaiced R, G and B layers as a variable.
     """
-    if c.cfa_pattern_data in raw[c.cfa_data].attrs:
-        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
-    else:
+    if c.cfa_pattern_data in raw:
         pattern = str(raw[c.cfa_pattern_data].values)
+    elif c.genicam_pattern_data in raw:
+        pattern = str(raw[c.genicam_pattern_data].values)
+    elif c.cfa_pattern_data in raw[c.cfa_data].attrs:
+        pattern = str(raw[c.cfa_data].attrs[c.cfa_pattern_data])
+    elif c.genicam_pattern_data in raw[c.cfa_data].attrs:
+        pattern = str(raw[c.cfa_data].attrs[c.genicam_pattern_data])
+    else:
+        raise ValueError('Bayer pattern not specified.')
 
     raw[c.rgb_data] = demosaic(
             raw[c.cfa_data],
@@ -349,10 +355,16 @@ def _rgb_to_rad(rgb):
     """
 
     # Retrieve exposure time
-    if c.camera_exposure in rgb[c.rgb_data].attrs:
-        exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
-    else:
+    if c.camera_exposure in rgb:
         exposure = rgb[c.camera_exposure].values
+    elif c.genicam_exposure in rgb:
+        exposure = rgb[c.genicam_exposure].values * 0.001 # GenICam uses microseconds
+    elif c.camera_exposure in rgb[c.rgb_data].attrs:
+        exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
+    elif c.genicam_exposure in rgb[c.rgb_data].attrs:
+        exposure = rgb[c.rgb_data].attrs[c.genicam_exposure] * 0.001
+    else:
+        raise ValueError('Exposure time not specified.')
 
     # Preserve metadata by setting them as coordinates
     preserved_data = [
