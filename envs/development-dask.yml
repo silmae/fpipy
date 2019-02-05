@@ -1,9 +1,11 @@
-name: test-environment
+name: fpipy-dev
 channels:
   - defaults
-dependencies:
+dependencies: 
   - numpy
   - xarray
   - rasterio
+  - dask
   - flake8
   - pytest
+  - Sphinx

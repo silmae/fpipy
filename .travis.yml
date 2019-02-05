@@ -1,6 +1,7 @@
 # Travis config based on 
 # https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html
 
+# Not actually used
 language: python
 python:
   - 3.6
@@ -8,13 +9,13 @@ python:
 notifications:
   email: false
 
+env:
+  - CONDA_ENV=tests
+  - CONDA_ENV=tests-dask
+
 # Install conda and use it for the dependencies (esp. rasterio)
 before_install:
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
@@ -24,7 +25,7 @@ before_install:
   - conda info -a
 
 install:
-  - conda env create -q -n test-environment python=$TRAVIS_PYTHON_VERSION --file envs/tests.yml
+  - conda env create -q -n test-environment python=$TRAVIS_PYTHON_VERSION --file envs/$CONDA_ENV.yml
   - source activate test-environment
   - python setup.py install
 
