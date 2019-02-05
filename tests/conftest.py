@@ -23,14 +23,15 @@ def raw_ENVI():
     return house_raw()
 
 
-def wavelengths(b):
-    start, end = (400, 1200)
-    return np.linspace(start, end, b)
+@pytest.fixture()
+def wl_range():
+    return (400, 1200)
 
 
 @pytest.fixture
-def metas(size):
+def metas(size, wl_range):
     idxs = size[0]
+    wl_start, wl_end = wl_range
 
     # Number of peaks for each index
     npeaks = np.tile([1, 2, 3], idxs + idxs % 3)[:idxs]
@@ -50,7 +51,7 @@ def metas(size):
     # Reasonable wavelengths for existing peaks
     mask = np.array([[i < npeaks[n] for i in range(3)] for n in range(idxs)])
     wls = np.zeros((idxs, 3))
-    wls.T.flat[mask.T.flatten()] = wavelengths(np.sum(npeaks))
+    wls.T.flat[mask.T.flatten()] = np.linspace(*wl_range, np.sum(npeaks))
     return sinvs, npeaks, wls
 
 
@@ -136,7 +137,7 @@ def raw(cfa, dark, pattern, exposure, metas):
 
 
 @pytest.fixture
-def rad(cfa, dark, exposure, metas):
+def rad(cfa, dark, exposure, metas, wl_range):
     k, y, x = cfa.shape
     _, npeaks, _ = metas
     hasdark, _ = dark
@@ -150,7 +151,7 @@ def rad(cfa, dark, exposure, metas):
     values = values.reshape(-1, 1, 1)
     values = np.tile(values, (b // 6 + 1, 1, 1))[:b]
     data = np.kron(np.ones((y, x), dtype=np.float64), values) / exposure
-    wls = wavelengths(b)
+    wls = np.linspace(*wl_range, b)
 
     rad = xr.Dataset(
             data_vars={
