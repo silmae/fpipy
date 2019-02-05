@@ -357,8 +357,8 @@ def _rgb_to_rad(rgb):
     # Retrieve exposure time
     if c.camera_exposure in rgb:
         exposure = rgb[c.camera_exposure].values
-    elif c.genicam_exposure in rgb:
-        exposure = rgb[c.genicam_exposure].values * 0.001 # GenICam uses microseconds
+    elif c.genicam_exposure in rgb:  # GenICam uses microseconds
+        exposure = rgb[c.genicam_exposure].values * 0.001
     elif c.camera_exposure in rgb[c.rgb_data].attrs:
         exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
     elif c.genicam_exposure in rgb[c.rgb_data].attrs:
