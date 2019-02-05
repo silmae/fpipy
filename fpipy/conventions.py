@@ -48,13 +48,19 @@ camera_gain = 'gain'
 """Camera analog gain value."""
 
 camera_exposure = 'exposure'
-"""Camera exposure time."""
+"""Camera exposure time in milliseconds."""
+
+genicam_exposure = 'ExposureTime'
+"""Camera exposure time in microseconds as defined by GenICam."""
 
 dc_included_attr = 'includes_dark_current'
 """Attribute indicating inclusion of dark current in the data."""
 
 cfa_pattern_data = 'bayer_pattern'
-"""Attribute denoting the pattern (e.g. RGGB) of the colour filter array."""
+"""String denoting the pattern (e.g. RGGB) of the colour filter array."""
+
+genicam_pattern_data = 'PixelColorFilter'
+"""String denoting the pattern (e.g. BayerGB) of the colour filter array."""
 
 image_index = 'index'
 """Index number of the image in a given stack."""
