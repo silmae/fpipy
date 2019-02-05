@@ -2,6 +2,10 @@ import pytest
 import numpy as np
 import xarray as xr
 import colour_demosaicing as cdm
+try:
+    import dask
+except ImportError:
+    dask = None
 
 import fpipy.conventions as c
 from fpipy.raw import BayerPattern
@@ -15,12 +19,18 @@ def calib_seq():
 
 @pytest.fixture(scope="session")
 def rad_ENVI():
-    return house_radiance()
+    kwargs = {}
+    if dask:
+        kwargs.update({'chunks': {'band': 1}})
+    return house_radiance(**kwargs)
 
 
 @pytest.fixture(scope="session")
 def raw_ENVI():
-    return house_raw()
+    kwargs = {}
+    if dask:
+        kwargs.update({'chunks': {'band': 1}})
+    return house_raw(**kwargs)
 
 
 def wavelengths(b):
@@ -132,7 +142,10 @@ def raw(cfa, dark, pattern, exposure, metas):
             },
         )
 
-    return raw
+    if dask:
+        return raw.chunk({c.image_index: 1})
+    else:
+        return raw
 
 
 @pytest.fixture
@@ -161,4 +174,7 @@ def rad(cfa, dark, exposure, metas):
                 c.band_index: np.arange(b),
                 }
             )
-    return rad
+    if dask:
+        return rad.chunk({c.band_index: 1})
+    else:
+        return rad
