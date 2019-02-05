@@ -15,7 +15,6 @@ requirements = [
     'numpy',
     'xarray',
     'rasterio',
-    'dask',
     'colour_demosaicing',
     'configparser;python_version<"3.4"',
 ]
