@@ -27,7 +27,7 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
             c.dark_reference_data: (c.dark_ref_dims, dark),
             c.number_of_peaks: (c.image_index, npeaks),
             c.sinv_data: (c.sinv_dims, sinvs),
-            c.cfa_pattern_data: pattern,
+            c.cfa_pattern_data: BayerPattern.get(pattern).name,
             c.camera_exposure: exposure,
             c.camera_gain: gain,
             c.wavelength_data: ((c.image_index, c.peak_coord), wls),

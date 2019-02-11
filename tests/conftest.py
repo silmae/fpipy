@@ -7,6 +7,7 @@ except ImportError:
 
 import fpipy.testing as fpt
 import fpipy.conventions as c
+from fpipy.raw import BayerPattern
 from fpipy.data import house_raw, house_radiance, house_calibration
 
 
@@ -55,8 +56,10 @@ def size(request):
 
 @pytest.fixture(
     params=[
-        'GBRG', 'GRBG', 'BGGR', 'RGGB',
-        'BayerGB', 'BayerGR', 'BayerBG', 'BayerRG'
+        BayerPattern.RGGB,
+        BayerPattern.GBRG,
+        BayerPattern.GRBG,
+        BayerPattern.BGGR,
         ])
 def pattern(request):
     return request.param

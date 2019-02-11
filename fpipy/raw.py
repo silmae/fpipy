@@ -108,11 +108,6 @@ def raw_to_radiance(raw, **kwargs):
         `c.cfa_data`,
         `c.dark_reference_data`,
 
-    pattern : BayerPattern or str, optional
-        Bayer pattern used to demosaic the CFA.
-        Can be supplied to override the file metadata value in cases where it
-        is missing or incorrect. Default 'RGGB'.
-
     dm_method : str, optional
         **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
         Demosaicing method. Default is 'bilinear'. See the `colour_demosaicing`
@@ -340,6 +335,12 @@ class BayerPattern(IntEnum):
     GRBG = 1
     BGGR = 2
     RGGB = 3
+
+    # Lowercase aliases.
+    gbrg = 0
+    grbg = 1
+    bggr = 2
+    rggb = 3
 
     # Aliases (GenICam PixelColorFilter values)
     BayerGB = 0

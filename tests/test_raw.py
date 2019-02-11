@@ -66,6 +66,17 @@ def test_ENVI_raw_format(raw, raw_ENVI):
         assert variable in raw_ENVI.variables
 
 
+def test_pattern_strings():
+    for p in ['gbrg', 'GBRG', 'BayerGB']:
+        assert BayerPattern.get(p) is BayerPattern.GBRG
+    for p in ['bggr', 'BGGR', 'BayerBG']:
+        assert BayerPattern.get(p) is BayerPattern.BGGR
+    for p in ['rggb', 'rggb', 'BayerRG']:
+        assert BayerPattern.get(p) is BayerPattern.RGGB
+    for p in ['grbg', 'GRBG', 'BayerGR']:
+        assert BayerPattern.get(p) is BayerPattern.GRBG
+
+
 def test_genicam_patterns():
     assert BayerPattern.BayerGB is BayerPattern.GBRG
     assert BayerPattern.BayerGR is BayerPattern.GRBG
