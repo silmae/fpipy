@@ -44,11 +44,10 @@ def metas(size, wl_range):
 
 @pytest.fixture(
     params=[
-        (10, 2, 2),
-        (1, 8, 8),
-        (1, 12, 8),
-        (1, 8, 10),
-        (3, 8, 8),
+        (1, 4, 4),
+        (2, 2, 2),
+        (3, 2, 2),
+        (1, 2, 4),
         ])
 def size(request):
     return request.param
@@ -81,12 +80,9 @@ def dark(size, dark_level):
     return fpt.dark((y, x), dark_level)
 
 
-@pytest.fixture(params=[1, 0.5, [1, 0.5]])
+@pytest.fixture(params=[1, 0.5])
 def exposure(request, size):
-    if np.isscalar(request.param):
-        return request.param
-    else:
-        return np.tile(request.param, size[0] // 2 + 1)[:size[0]]
+    return request.param
 
 
 @pytest.fixture(params=[2])
@@ -98,7 +94,7 @@ def gain(request):
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     res = fpt.raw(cfa, dark, pattern, exposure, gain, metas, wl_range)
     if dask:
-        return res.chunk({c.image_index: 1})
+        return res.chunk()
     else:
         return res
 
@@ -107,6 +103,6 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
 def rad(cfa, dark_level, exposure, metas, wl_range):
     rad = fpt.rad(cfa, dark_level, exposure, metas, wl_range)
     if dask:
-        return rad.chunk({c.band_index: 1})
+        return rad.chunk()
     else:
         return rad

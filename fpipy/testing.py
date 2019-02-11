@@ -10,7 +10,7 @@ from .raw import BayerPattern
 
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     """Raw data (CFA, dark and metadata)."""
-    b, y, x = cfa.shape
+    b, _, _ = cfa.shape
     sinvs, npeaks, wls = metas
 
     data = xr.DataArray(
@@ -19,7 +19,7 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
         )
 
     if not np.isscalar(exposure):
-        exposure = (c.image_index, exposure[:b])
+        exposure = (c.image_index, exposure)
 
     raw = xr.Dataset(
         data_vars={
@@ -95,12 +95,7 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
     dark_rad = dark_level * np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
     values = values - dark_rad
 
-    if np.isscalar(exposure):
-        values = values / exposure
-    else:
-        idxs = [0, 1, 2, 1, 2, 2][:b]
-        exps = exposure[idxs]
-        values = values / exps
+    values = values / exposure
 
     values = values.reshape(-1, 1, 1)
     values = np.tile(values, (b // 6 + 1, 1, 1))[:b]
