@@ -1,0 +1,11 @@
+name: fpipy-dev
+channels:
+  - defaults
+dependencies: 
+  - numpy
+  - xarray
+  - rasterio
+  - dask
+  - flake8
+  - pytest
+  - Sphinx

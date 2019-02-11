@@ -3,18 +3,21 @@
 import sys
 import os
 import argparse
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
-
 import fpipy as fp
+try:
+    import dask
+    from dask.diagnostics import ProgressBar
+except ImportError:
+    dask = None
 
 
 def save_nc(ds, path):
     """Save dataset as netCDF, overwriting"""
     name, _ = os.path.splitext(path)
-    ds.to_netcdf(name + '.nc', mode='w')
+    if dask:
+        return ds.to_netcdf(name + '.nc', mode='w', compute=False)
+    else:
+        return ds.to_netcdf(name + '.nc', mode='w')
 
 
 def writable_dir(dirname):
@@ -90,14 +93,21 @@ def main(argv):
     inputs = args.inputs
     prefix = args.prefix
 
-    print('Calculating radiances from {0} files...'.format(len(inputs)))
-    if tqdm:
-        inputs = tqdm(inputs)
+    if dask is not None:
+        chunking = {'chunks': {'band': 'auto', 'x': 'auto', 'y': 'auto'}}
+    else:
+        chunking = {}
 
+    print('Calculating radiances from {0} files...'.format(len(inputs)))
+    outputs = []
     for rawfile in inputs:
-        rad = fp.raw.raw_to_radiance(fp.read_ENVI_cfa(rawfile))
+        rad = fp.raw.raw_to_radiance(fp.read_ENVI_cfa(rawfile, **chunking))
         bname = os.path.basename(rawfile)
-        savecmd(rad, os.path.join(outdir, prefix + bname))
+        outputs.append(savecmd(rad, os.path.join(outdir, prefix + bname)))
+
+    if dask is not None:
+        with ProgressBar():
+            dask.compute(outputs)
 
 
 if __name__ == "__main__":

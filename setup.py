@@ -56,8 +56,5 @@ setup(
     ],
     test_suite='tests',
     tests_require=test_requirements,
-    extras_require={
-        'progressbar': ['tqdm'],
-        },
     setup_requires=setup_requirements,
 )

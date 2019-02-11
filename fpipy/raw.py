@@ -20,6 +20,7 @@ Calculating radiances from raw data and plotting them can be done as follows::
 """
 from enum import IntEnum
 import xarray as xr
+import numpy as np
 import colour_demosaicing as cdm
 from . import conventions as c
 
@@ -212,10 +213,17 @@ def _raw_to_rgb(raw, dm_method, keep_variables=None):
     res: xr.Dataset
         Dataset containing the demosaiced R, G and B layers as a variable.
     """
-    if c.cfa_pattern_data in raw[c.dark_corrected_cfa_data].attrs:
-        pattern = str(raw[c.dark_corrected_cfa_data].attrs[c.cfa_pattern_data])
+    attrs = raw[c.dark_corrected_cfa_data].attrs
+    if c.cfa_pattern_data in raw:
+        pattern = str(raw[c.cfa_pattern_data].data)
+    elif c.genicam_pattern_data in raw:
+        pattern = str(raw[c.genicam_pattern_data].data)
+    elif c.cfa_pattern_data in attrs:
+        pattern = str(attrs[c.cfa_pattern_data])
+    elif c.genicam_pattern_data in attrs:
+        pattern = str(attrs[c.genicam_pattern_data])
     else:
-        pattern = str(raw[c.cfa_pattern_data].values)
+        raise ValueError('Bayer pattern not specified.')
 
     raw[c.rgb_data] = demosaic(
             raw[c.dark_corrected_cfa_data],
@@ -248,10 +256,16 @@ def _rgb_to_rad(rgb, keep_variables=None):
     """
 
     # Retrieve exposure time
-    if c.camera_exposure in rgb[c.rgb_data].attrs:
+    if c.camera_exposure in rgb:
+        exposure = rgb[c.camera_exposure].data
+    elif c.genicam_exposure in rgb:  # GenICam uses microseconds
+        exposure = rgb[c.genicam_exposure].data * 0.001
+    elif c.camera_exposure in rgb[c.rgb_data].attrs:
         exposure = rgb[c.rgb_data].attrs[c.camera_exposure]
+    elif c.genicam_exposure in rgb[c.rgb_data].attrs:
+        exposure = rgb[c.rgb_data].attrs[c.genicam_exposure] * 0.001
     else:
-        exposure = rgb[c.camera_exposure].values
+        raise ValueError('Exposure time not specified.')
 
     # Select only peaks that have data (as defined by c.number_of_peaks)
     rgb = rgb.sel(
@@ -299,7 +313,11 @@ def subtract_dark(ds, keep_variables=None):
     """
 
     ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
-            _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data]
+            _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
+            dask='parallelized',
+            output_dtypes=[
+                np.result_type(ds[c.cfa_data], ds[c.dark_reference_data])
+                ],
             )
 
     ds = _drop_variable(ds, c.cfa_data, keep_variables)
@@ -323,15 +341,21 @@ class BayerPattern(IntEnum):
     BGGR = 2
     RGGB = 3
 
-    def __str__(self):
-        return self.name
+    # Aliases (GenICam PixelColorFilter values)
+    BayerGB = 0
+    BayerGR = 1
+    BayerBG = 2
+    BayerRG = 3
 
     @classmethod
     def get(self, pattern):
         try:
-            return self[pattern.upper()]
+            return self[pattern]
         except (KeyError, AttributeError):
             return self(pattern)
+
+    def __str__(self):
+        return self.name
 
 
 def demosaic(cfa, pattern, dm_method):
@@ -351,7 +375,7 @@ def demosaic(cfa, pattern, dm_method):
     -------
     xarray.DataArray
     """
-    pattern_name = BayerPattern.get(pattern).name
+    pattern = BayerPattern.get(pattern).name
 
     dm_methods = {
         'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
@@ -363,9 +387,13 @@ def demosaic(cfa, pattern, dm_method):
     res = xr.apply_ufunc(
         dm_alg,
         cfa,
-        kwargs=dict(pattern=pattern_name),
+        kwargs=dict(pattern=pattern),
         input_core_dims=[(c.height_coord, c.width_coord)],
-        output_core_dims=[(c.RGB_dims)])
+        output_core_dims=[(c.RGB_dims)],
+        dask='parallelized',
+        output_dtypes=[np.float64],
+        output_sizes={c.colour_coord: 3}
+        )
     res.coords[c.colour_coord] = ['R', 'G', 'B']
     return res
 

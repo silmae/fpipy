@@ -32,7 +32,7 @@ project_root = os.path.dirname(cwd)
 sys.path.insert(0, project_root)
 
 import mock
-MOCK_MODULES=['rasterio', 'xarray', 'pandas', 'colour', 'colour-demosaicing', 'colour.utilities']
+MOCK_MODULES=['rasterio', 'xarray', 'dask', 'pandas', 'colour', 'colour-demosaicing', 'colour.utilities']
 for mod in MOCK_MODULES:
     sys.modules[mod] = mock.Mock()
 import fpipy
