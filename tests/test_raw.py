@@ -228,15 +228,15 @@ def test_radiance_to_reflectance_keep_variables(rad):
             assert(notv not in keep_one.variables)
 
 
-def test_reflectance_is_sensible(raw):
+def test_reflectance_is_sensible(rad):
     """Reflectance should be 1 if dataset is used as its own white reference
     unless the reflectance is 0/0 = NaN.
     """
-    ref = fpr.raw_to_reflectance(raw, raw, keep_variables=[c.radiance_data])
+    ref = fpr.radiance_to_reflectance(rad, rad, keep_variables=[c.radiance_data])
 
     target = xr.DataArray(np.ones(ref[c.reflectance_data].shape),
                           dims=ref[c.reflectance_data].dims,
                           coords=ref[c.reflectance_data].coords)
-    target.data[ref[c.radiance_data].values == 0] = np.nan
+    target.data[rad[c.radiance_data].values == 0] = np.nan
 
     xrt.assert_equal(ref[c.reflectance_data], target)
