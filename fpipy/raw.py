@@ -56,9 +56,9 @@ def raw_to_reflectance(raw, whiteraw, keep_variables=None):
     radiance = raw_to_radiance(raw, keep_variables=keep_variables)
     white = raw_to_radiance(whiteraw, keep_variables=keep_variables)
     return radiance_to_reflectance(
-            radiance, white,
-            keep_variables=keep_variables
-            )
+        radiance, white,
+        keep_variables=keep_variables
+        )
 
 
 def radiance_to_reflectance(radiance, white, keep_variables=None):
@@ -67,9 +67,10 @@ def radiance_to_reflectance(radiance, white, keep_variables=None):
     Parameters
     ----------
     radiance : xarray.Dataset
+        Dataset containing the image(s) to divide by the references.
 
     white : xarray.Dataset
-        White reference image
+        White reference image(s).
 
     keep_variables: list-like, optional
         List of variables to keep in the result, default None.
@@ -79,19 +80,26 @@ def radiance_to_reflectance(radiance, white, keep_variables=None):
     Returns
     -------
     reflectance: xarray.Dataset
-        Reflectance = Radiance / White_Radiance.
+        Dataset containing the reflectance and the original metadata for both
+        datasets indexed by measurement type.
     """
 
-    radiance[c.reflectance_data] = (
+    res = xr.concat(
+        [radiance, white],
+        dim=xr.DataArray(
+            ['sample', 'white_reference'],
+            dims=(c.measurement_type,),
+            name=c.measurement_type,
+            ),
+        )
+    res[c.reflectance_data] = (
             radiance[c.radiance_data] / white[c.radiance_data]
-            )
-
-    radiance[c.reflectance_data] = radiance[c.reflectance_data].assign_attrs({
-        'long_name': 'reflectance',
-        'units': '1',
+        ).assign_attrs({
+            'long_name': 'reflectance',
+            'units': '1',
         })
 
-    return _drop_variable(radiance, c.radiance_data, keep_variables)
+    return _drop_variable(res, c.radiance_data, keep_variables)
 
 
 def raw_to_radiance(raw, **kwargs):

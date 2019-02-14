@@ -4,6 +4,7 @@
 
 __all__ = []
 
+measurement_type = 'measurement'
 
 peak_coord = 'peak'
 """Index coordinate denoting passband peaks of the FPI."""
