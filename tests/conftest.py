@@ -94,7 +94,7 @@ def gain(request):
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     res = fpt.raw(cfa, dark, pattern, exposure, gain, metas, wl_range)
     if dask:
-        return res.chunk()
+        return res.chunk({c.image_index: 1})
     else:
         return res
 
@@ -103,6 +103,6 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
 def rad(cfa, dark_level, exposure, metas, wl_range):
     rad = fpt.rad(cfa, dark_level, exposure, metas, wl_range)
     if dask:
-        return rad.chunk()
+        return rad.chunk({c.band_index: 1})
     else:
         return rad
