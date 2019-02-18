@@ -22,16 +22,15 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
         exposure = (c.image_index, exposure)
 
     raw = metas.assign({
-            c.cfa_data: data,
-            c.dark_reference_data: (c.dark_ref_dims, dark),
-            c.cfa_pattern_data:
-                (c.image_index, np.full((b,), BayerPattern.get(pattern).name)),
-            c.camera_exposure:
-                (c.image_index, np.full((b,), exposure)),
-            c.camera_gain:
-                (c.image_index, np.full((b,), gain)),
-            },
-        )
+        c.cfa_data: data,
+        c.dark_reference_data: (c.dark_ref_dims, dark),
+        c.cfa_pattern_data:
+            (c.image_index, np.full((b,), BayerPattern.get(pattern).name)),
+        c.camera_exposure:
+            (c.image_index, np.full((b,), exposure)),
+        c.camera_gain:
+            (c.image_index, np.full((b,), gain)),
+        })
 
     return raw
 
@@ -113,9 +112,14 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
                 c.wavelength_data: (c.band_index, wls),
                 },
             coords={
-                c.band_index: np.arange(b),
-                }
-            )
+                c.image_index: (c.band_index, idxs),
+                c.peak_coord: (c.band_index, peak),
+                c.band_index: (c.band_index, np.arange(b) + 1),
+                },
+            attrs={
+                'long_name': 'radiance per unit wavelength',
+                'units': 'W sr-1 m-2 nm-1',
+            })
     return rad
 
 
