@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 try:
     import dask
 except ImportError:
@@ -39,7 +38,10 @@ def wl_range():
 
 @pytest.fixture
 def metas(size, wl_range):
-    return fpt.metadata(size, wl_range)
+    if dask:
+        return fpt.metadata(size, wl_range).chunk({c.image_index: 1})
+    else:
+        return fpt.metadata(size, wl_range)
 
 
 @pytest.fixture(
