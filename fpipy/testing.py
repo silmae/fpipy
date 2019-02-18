@@ -24,9 +24,12 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     raw = metas.assign({
             c.cfa_data: data,
             c.dark_reference_data: (c.dark_ref_dims, dark),
-            c.cfa_pattern_data: BayerPattern.get(pattern).name,
-            c.camera_exposure: exposure,
-            c.camera_gain: gain,
+            c.cfa_pattern_data:
+                (c.image_index, np.full((b,), BayerPattern.get(pattern).name)),
+            c.camera_exposure:
+                (c.image_index, np.full((b,), exposure)),
+            c.camera_gain:
+                (c.image_index, np.full((b,), gain)),
             },
         )
 
