@@ -21,21 +21,12 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     if not np.isscalar(exposure):
         exposure = (c.image_index, exposure)
 
-    raw = xr.Dataset(
-        data_vars={
+    raw = metas.assign({
             c.cfa_data: data,
             c.dark_reference_data: (c.dark_ref_dims, dark),
-            c.number_of_peaks: (c.image_index, npeaks),
-            c.sinv_data: (c.sinv_dims, sinvs),
             c.cfa_pattern_data: BayerPattern.get(pattern).name,
             c.camera_exposure: exposure,
             c.camera_gain: gain,
-            c.wavelength_data: ((c.image_index, c.peak_coord), wls),
-            },
-        coords={
-            c.image_index: np.arange(b),
-            c.peak_coord: np.array([1, 2, 3]),
-            c.colour_coord: ['R', 'G', 'B'],
             },
         )
 
@@ -78,7 +69,18 @@ def metadata(size, wl_range):
     mask = np.array([[i < npeaks[n] for i in range(3)] for n in range(idxs)])
     wls = np.zeros((idxs, 3))
     wls.T.flat[mask.T.flatten()] = np.linspace(*wl_range, np.sum(npeaks))
-    return sinvs, npeaks, wls
+    return xr.Dataset(
+        data_vars={
+            c.sinv_data: (c.sinv_dims, sinvs),
+            c.number_of_peaks: (c.image_index, npeaks),
+            c.wavelength_data: ((c.image_index, c.peak_coord), wls),
+            },
+        coords={
+            c.image_index: np.arange(idxs),
+            c.peak_coord: np.array([1, 2, 3]),
+            c.colour_coord: ['R', 'G', 'B'],
+            },
+        )
 
 
 def rad(cfa, dark_level, exposure, metas, wl_range):
@@ -86,8 +88,7 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
     and given constant dark level.
     """
     k, y, x = cfa.shape
-    _, npeaks, _ = metas
-    b = np.sum(npeaks)
+    b = int(np.sum(metas[c.number_of_peaks]))
 
     # Purposefully computed by hand
     # Currently only works for the dark levels 0, 1
