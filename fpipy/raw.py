@@ -218,9 +218,9 @@ def _raw_to_rgb(raw, dm_method, keep_variables=None):
     """
     attrs = raw[c.dark_corrected_cfa_data].attrs
     if c.cfa_pattern_data in raw:
-        pattern = str(raw[c.cfa_pattern_data].data)
+        pattern = str(raw[c.cfa_pattern_data].values)
     elif c.genicam_pattern_data in raw:
-        pattern = str(raw[c.genicam_pattern_data].data)
+        pattern = str(raw[c.genicam_pattern_data].values)
     elif c.cfa_pattern_data in attrs:
         pattern = str(attrs[c.cfa_pattern_data])
     elif c.genicam_pattern_data in attrs:
