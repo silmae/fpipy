@@ -154,7 +154,7 @@ def raw_to_radiance(raw, **kwargs):
     # explicit values (0...nbands)
     radiances = radiances.reset_index(c.band_index)
     radiances = radiances.assign_coords(
-            **{c.band_index: radiances[c.band_index]}
+            **{c.band_index: radiances[c.band_index] + 1}
             )
 
     return radiances

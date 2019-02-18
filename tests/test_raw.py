@@ -84,6 +84,13 @@ def test_ENVI_raw_format(raw, raw_ENVI):
         assert variable in raw_ENVI.variables
 
 
+def test_ENVI_raw_to_rad_correspondence(raw_ENVI, rad_ENVI):
+    rad_computed = fpr.raw_to_radiance(raw_ENVI)
+
+    for v in [c.band_index, c.wavelength_data, c.fwhm_data]:
+        assert np.all(rad_computed[v].values == rad_ENVI[v].values)
+
+
 def test_pattern_strings():
     for p in ['gbrg', 'GBRG', 'BayerGB']:
         assert BayerPattern.get(p) is BayerPattern.GBRG
