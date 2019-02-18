@@ -5,6 +5,7 @@ except ImportError:
     dask = None
 
 import fpipy.testing as fpt
+import fpipy.raw as fpr
 import fpipy.conventions as c
 from fpipy.raw import BayerPattern
 from fpipy.data import house_raw, house_radiance, house_calibration
@@ -102,9 +103,14 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
 
 
 @pytest.fixture
-def rad(cfa, dark_level, exposure, metas, wl_range):
+def rad_expected(cfa, dark_level, exposure, metas, wl_range):
     rad = fpt.rad(cfa, dark_level, exposure, metas, wl_range)
     if dask:
         return rad.chunk({c.band_index: 1})
     else:
         return rad
+
+
+@pytest.fixture
+def rad_computed(raw):
+    return fpr.raw_to_radiance(raw)

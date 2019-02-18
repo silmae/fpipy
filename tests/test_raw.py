@@ -44,14 +44,32 @@ def test_read_calibration_format(calib_seq):
         assert v in calib_seq.variables
 
 
-def test_ENVI_rad_format(rad, rad_ENVI):
-    assert type(rad_ENVI) is type(rad)
+def test_ENVI_rad_format(rad_expected, rad_ENVI):
+    assert type(rad_ENVI) is type(rad_expected)
 
-    for dim in rad.dims:
+    dims = [
+        c.band_index,
+        c.width_coord,
+        c.height_coord,
+        ]
+
+    for dim in dims:
         assert dim in rad_ENVI.dims
-    for coord in rad.coords:
+
+    coords = [
+        c.band_index,
+        c.width_coord,
+        c.height_coord,
+        ]
+    for coord in coords:
         assert coord in rad_ENVI.coords
-    for variable in rad.variables:
+
+    variables = [
+        c.radiance_data,
+        c.wavelength_data,
+        c.fwhm_data,
+        ]
+    for variable in variables:
         assert variable in rad_ENVI.variables
 
 
@@ -110,14 +128,13 @@ def test_raw_format(raw):
         assert v in raw.variables
 
 
-def test_raw_to_radiance_format(raw):
-    rad = fpr.raw_to_radiance(raw)
-    assert type(rad) is xr.Dataset
+def test_raw_to_radiance_format(rad_computed):
+    assert type(rad_computed) is xr.Dataset
 
     # These should exist in radiances computed from CFA data
     dims = c.radiance_dims
     for d in dims:
-        assert d in rad.dims
+        assert d in rad_computed.dims
 
     variables = [
         c.radiance_data,
@@ -131,17 +148,32 @@ def test_raw_to_radiance_format(raw):
         c.sinv_data,
         ]
     for v in variables:
-        assert v in rad.variables
+        assert v in rad_computed.variables
 
 
-def test_raw_to_radiance_correctness(raw, rad):
+def test_all_peaks_computed(raw, rad_computed):
+    idx_counts = np.bincount(rad_computed[c.image_index])
+    for i in raw[c.image_index]:
+        assert(
+            idx_counts[i] == raw.sel(**{c.image_index: i})[c.number_of_peaks]
+            )
+
+
+def test_all_wavelengths_in_order(raw, rad_computed):
+    wls = raw.where(raw[c.wavelength_data] > 0)[c.wavelength_data].values
+    expected = np.sort(wls[~np.isnan(wls)].ravel())
+    actual = rad_computed[c.wavelength_data].values
+    assert np.all(expected == actual)
+
+
+def test_raw_to_radiance_correctness(rad_expected, rad_computed):
     # Demosaicing is actually not interpolation on edges currently
-    expected = rad[c.radiance_data].isel(
-            x=slice(1, -2), y=slice(1, -2)
-            ).transpose(c.band_index, c.height_coord, c.width_coord)
-    actual = fpr.raw_to_radiance(raw)[c.radiance_data].isel(
-            x=slice(1, -2), y=slice(1, -2)
-            ).transpose(c.band_index, c.height_coord, c.width_coord)
+    expected = rad_expected[c.radiance_data].isel(
+                x=slice(1, -2), y=slice(1, -2)
+            ).transpose(*c.radiance_dims).compute()
+    actual = rad_computed[c.radiance_data].isel(
+                x=slice(1, -2), y=slice(1, -2)
+            ).transpose(*c.radiance_dims).compute()
     xrt.assert_equal(expected, actual)
 
 
@@ -165,7 +197,7 @@ def test_subtract_dark_keep_variables(raw):
             assert(notv not in keep_one.variables)
 
 
-def test_raw_to_radiance_keep_variables(raw):
+def test_raw_to_radiance_keep_variables(raw, rad_computed):
     variables = [
         c.cfa_data,
         c.dark_corrected_cfa_data,
@@ -173,7 +205,7 @@ def test_raw_to_radiance_keep_variables(raw):
         c.rgb_data,
         ]
 
-    default = fpr.raw_to_radiance(raw)
+    default = rad_computed
     keep_all = fpr.raw_to_radiance(raw, keep_variables=variables)
 
     for v in variables:
@@ -181,28 +213,6 @@ def test_raw_to_radiance_keep_variables(raw):
         assert(v in keep_all.variables)
 
         keep_one = fpr.raw_to_radiance(raw, keep_variables=[v])
-        assert(v in keep_one.variables)
-
-        for notv in [var for var in variables if var is not v]:
-            assert(notv not in keep_one.variables)
-
-
-def test_raw_to_reflectance_keep_variables(raw):
-    variables = [
-        c.cfa_data,
-        c.dark_reference_data,
-        c.rgb_data,
-        c.radiance_data
-        ]
-
-    default = fpr.raw_to_reflectance(raw, raw)
-    keep_all = fpr.raw_to_reflectance(raw, raw, keep_variables=variables)
-
-    for v in variables:
-        assert(v not in default.variables)
-        assert(v in keep_all.variables)
-
-        keep_one = fpr.raw_to_reflectance(raw, raw, keep_variables=[v])
         assert(v in keep_one.variables)
 
         for notv in [var for var in variables if var is not v]:
@@ -228,17 +238,17 @@ def test_radiance_to_reflectance_keep_variables(rad):
             assert(notv not in keep_one.variables)
 
 
-def test_reflectance_is_sensible(rad):
+def test_reflectance_is_sensible(rad_expected):
     """Reflectance should be 1 if dataset is used as its own white reference
     except where reflectance is 0 / 0, resulting in NaN.
     """
-    actual = fpr.radiance_to_reflectance(rad, rad)
+    actual = fpr.radiance_to_reflectance(rad_expected, rad_expected)
 
     expected = xr.DataArray(
         np.ones(actual[c.reflectance_data].shape),
         dims=actual[c.reflectance_data].dims,
         coords=actual[c.reflectance_data].coords
         )
-    expected.data[rad[c.radiance_data].values == 0] = np.nan
+    expected.data[rad_expected[c.radiance_data].values == 0] = np.nan
 
     xrt.assert_equal(actual[c.reflectance_data], expected)
