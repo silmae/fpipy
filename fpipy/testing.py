@@ -56,13 +56,13 @@ def metadata(size, wl_range):
     npeaks = np.tile([1, 2, 3], idxs + idxs % 3)[:idxs]
 
     # distinct sinvs for adjacent indices
-    tmp = np.array([[[0, 0, 1],
-                     [0, 0, 0],
-                     [0, 0, 0]],
-                    [[0, 1, 0],
+    tmp = np.array([[[0, 0, 1],   # R, G, B sinvs for 1st peak in the 1st image
+                     [0, 0, 0],   # 2nd peak
+                     [0, 0, 0]],  # 3rd peak
+                    [[0, 1, 0],   # and so on for 2nd image
                      [0, 1, 1],
                      [0, 0, 0]],
-                    [[1, 0, 0],
+                    [[1, 0, 0],   # and the 3rd image
                      [1, 0, 1],
                      [1, 1, 0]]])
     sinvs = np.tile(tmp, (idxs // 3 + 1, 1, 1))[:idxs, :, :]
@@ -91,6 +91,11 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
     """
     k, y, x = cfa.shape
     b = int(np.sum(metas[c.number_of_peaks]))
+
+    # Corresponding indices and peaks of the original images
+    idxs = np.clip(np.tile([0, 1, 2, 1, 2, 2], b // 6 + b)[:b], 0, k-1)
+    peak = np.tile(
+            np.array(k * [1] + (k-1) * [2] + (k-2) * [3]), b // 6 + 1)[:b]
 
     # Purposefully computed by hand
     # Currently only works for the dark levels 0, 1
