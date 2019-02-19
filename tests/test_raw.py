@@ -226,19 +226,21 @@ def test_raw_to_radiance_keep_variables(raw, rad_computed):
             assert(notv not in keep_one.variables)
 
 
-def test_radiance_to_reflectance_keep_variables(rad):
+def test_radiance_to_reflectance_keep_variables(rad_expected):
     variables = [
         c.radiance_data
         ]
 
-    default = fpr.radiance_to_reflectance(rad, rad)
-    keep_all = fpr.radiance_to_reflectance(rad, rad, keep_variables=variables)
+    default = fpr.radiance_to_reflectance(rad_expected, rad_expected)
+    keep_all = fpr.radiance_to_reflectance(
+            rad_expected, rad_expected, keep_variables=variables)
 
     for v in variables:
         assert(v not in default.variables)
         assert(v in keep_all.variables)
 
-        keep_one = fpr.radiance_to_reflectance(rad, rad, keep_variables=[v])
+        keep_one = fpr.radiance_to_reflectance(
+                rad_expected, rad_expected, keep_variables=[v])
         assert(v in keep_one.variables)
 
         for notv in [var for var in variables if var is not v]:
