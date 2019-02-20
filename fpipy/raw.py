@@ -84,22 +84,29 @@ def radiance_to_reflectance(radiance, white, keep_variables=None):
         datasets indexed by measurement type.
     """
 
-    res = xr.concat(
-        [radiance, white],
-        dim=xr.DataArray(
-            ['sample', 'white_reference'],
-            dims=(c.measurement_type,),
-            name=c.measurement_type,
-            ),
+    res = xr.Dataset(
+        data_vars={
+            c.reflectance_data: (
+                radiance[c.radiance_data] / white[c.radiance_data]
+                ).assign_attrs({
+                    'long_name': 'reflectance',
+                    'units': '1',
+                })}
         )
-    res[c.reflectance_data] = (
-            radiance[c.radiance_data] / white[c.radiance_data]
-        ).assign_attrs({
-            'long_name': 'reflectance',
-            'units': '1',
-        })
 
-    return _drop_variable(res, c.radiance_data, keep_variables)
+    if keep_variables:
+        res = xr.merge([
+                res,
+                xr.concat(
+                    [radiance, white],
+                    dim=xr.DataArray(
+                        ['sample', 'white_reference'],
+                        name=c.measurement_type,
+                        dims=c.measurement_type,
+                    ),
+                )])
+
+    return res
 
 
 def raw_to_radiance(raw, **kwargs):
