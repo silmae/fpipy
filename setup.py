@@ -37,7 +37,7 @@ setup(
     author="Matti A. Eskelinen",
     author_email='matti.a.eskelinen@student.jyu.fi',
     url='https://github.com/silmae/fpipy',
-    packages=find_packages(include=['fpipy']),
+    packages=find_packages(),
     scripts=['bin/raw2rad'],
     include_package_data=True,
     install_requires=requirements,
