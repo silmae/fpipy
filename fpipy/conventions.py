@@ -4,6 +4,7 @@
 
 __all__ = []
 
+measurement_type = 'measurement'
 
 peak_coord = 'peak'
 """Index coordinate denoting passband peaks of the FPI."""
@@ -29,8 +30,11 @@ radiance_data = 'radiance'
 reflectance_data = 'reflectance'
 """DataArray containing a stack of reflectance images."""
 
-cfa_data = 'cfa'
-"""DataArray containing a stack of CFA images."""
+cfa_data = 'dn'
+"""DataArray containing a stack of raw CFA images."""
+
+dark_corrected_cfa_data = 'dn_dark_corrected'
+"""DataArray containing a stack of raw images with dark current corrected"""
 
 rgb_data = 'rgb'
 """DataArray containing a stack of RGB images."""
@@ -52,9 +56,6 @@ camera_exposure = 'exposure'
 
 genicam_exposure = 'ExposureTime'
 """Camera exposure time in microseconds as defined by GenICam."""
-
-dc_included_attr = 'includes_dark_current'
-"""Attribute indicating inclusion of dark current in the data."""
 
 cfa_pattern_data = 'bayer_pattern'
 """String denoting the pattern (e.g. RGGB) of the colour filter array."""

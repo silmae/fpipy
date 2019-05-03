@@ -3,17 +3,19 @@ from time import time
 import fpipy as fp
 import fpipy.testing as fpt
 
-size = (100, 1024, 1024)
+size = (64, 1080, 1920)
 pattern = 'RGGB'
 
 print('******** Generating test data **************')
 t00 = time()
 raw = fpt.raw(
         cfa=fpt.cfa(size, pattern, R=1, G=2, B=5),
-        dark=(True, fpt.dark(size[1:])),
+        dark=fpt.dark(size[1:], 1),
         pattern=pattern,
         exposure=2.0,
-        metas=fpt.metadata(size, (200, 1200))
+        gain=1,
+        metas=fpt.metadata(size, (200, 1200)),
+        wl_range=(200, 1200),
         )
 t01 = time()
 print(f'Test data generation took {t01 - t00} seconds.')

@@ -160,7 +160,6 @@ def read_ENVI_cfa(filepath, raw_unit='dn', **kwargs):
                 attrs={'units': raw_unit}
                 )
         ds[c.cfa_data] = (c.cfa_dims, envi.data[1:, ::])
-        ds[c.cfa_data].attrs[c.dc_included_attr] = True
     else:
         # Note that we do not no whether or not the data still includes dark
         # current (only that there was no reference).
