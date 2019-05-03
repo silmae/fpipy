@@ -9,3 +9,5 @@ dependencies:
   - colour
   - pip:
      - colour-demosaicing
+     - sphinxcontrib-autoprogram
+     - sphinx_rtd_theme
