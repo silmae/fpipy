@@ -1,12 +1,11 @@
 name: fpipy-docs
 channels:
-  - conda-forge
   - defaults
 dependencies:
   - python=3.6
   - sphinx=1.7.0
+  - xarray
   - numpy
-  - colour
   - pip:
      - colour-demosaicing
      - sphinxcontrib-autoprogram

@@ -1,4 +1,7 @@
+build:
+    image: latest
+conda:
+    file: envs/readthedocs.yml
 python:
-  pip_install: false
-
-requirements_file: envs/readthedocs.txt
+    version: 3.6
+    setup_py_install: true
