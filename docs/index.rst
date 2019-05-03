@@ -1,18 +1,14 @@
-Welcome to the FPIpy documentation!
-===================================
-
-Contents:
+.. include:: readme.rst
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
-   readme
-   installation
-   usage
-   fpipy
+   api
+   cli
+   changes
    contributing
    authors
-   history
 
 Indices and tables
 ==================

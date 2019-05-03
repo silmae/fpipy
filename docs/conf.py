@@ -41,13 +41,21 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinxcontrib.autoprogram',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
 ]
 
-autodoc_mock_imports = ['xarray', 'pandas']
+# generate autosummary
+autosummary_generate = True
+numpydoc_show_class_members = False
+
+# Mock imports for autodoc
+# autodoc_mock_imports = ['xarray', 'pandas']
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -168,4 +176,4 @@ texinfo_documents = [
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'https://docs.python.org/3': None}
