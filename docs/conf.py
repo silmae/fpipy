@@ -189,4 +189,7 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'matplotlib': ('https://matplotlib.org/', None),
+    'colour': ('https://colour.readthedocs.io/en/latest/', None),
+    'colour-demosaicing':
+        ('https://colour-demosaicing.readthedocs.io/en/latest/', None)
 }
