@@ -6,6 +6,7 @@
 
    api
    cli
+   glossary
    changes
    contributing
    authors
