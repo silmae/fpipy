@@ -3,9 +3,10 @@ channels:
   - defaults
 dependencies:
   - python=3.6
-  - sphinx=1.7.0
+  - sphinx<2.0.0
   - xarray
   - numpy
+  - pip
   - pip:
      - colour-demosaicing
      - sphinxcontrib-autoprogram
