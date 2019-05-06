@@ -2,6 +2,12 @@
 API reference
 =============
 
+
+.. autosummary::
+   :toctree:
+
+   fpipy
+
 .. currentmodule:: fpipy
 
 .. autosummary::
