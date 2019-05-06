@@ -14,6 +14,7 @@
 #
 import os
 import sys
+import fpipy
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../bin'))
 
@@ -25,9 +26,9 @@ copyright = '2019, The fpipy developers'
 author = 'The fpipy developers'
 
 # The short X.Y version
-version = ''
+version = fpipy.__version__
 # The full version, including alpha/beta/rc tags
-release = ''
+release = fpipy.__version__
 
 
 # -- General configuration ---------------------------------------------------
