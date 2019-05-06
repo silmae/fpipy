@@ -2,12 +2,15 @@
 API reference
 =============
 
+.. currentmodule:: fpipy
+
 .. autosummary::
    :toctree: reference
 
-   fpipy
-   fpipy.io
-   fpipy.raw
-   fpipy.meta
-   fpipy.conventions
-   fpipy.data
+   io
+   raw
+   meta
+   data
+   conventions
+   simulate
+   testing
