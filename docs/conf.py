@@ -54,6 +54,12 @@ extensions = [
 autosummary_generate = True
 numpydoc_show_class_members = False
 
+
+autodoc_default_flags = [
+    'members',
+    'undoc-members',
+]
+
 # Mock imports for autodoc
 # autodoc_mock_imports = ['xarray', 'pandas']
 
