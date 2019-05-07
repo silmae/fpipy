@@ -23,7 +23,7 @@ Ready to contribute? Here's how to set up `fpipy` for local development.
 
     $ cd fpipy/
     $ conda env create -f envs/development.yml
-    $ source activate fpipy-dev
+    $ conda activate fpipy-dev
     $ pip install -e .
 
 4. Create a branch for local development::
@@ -52,6 +52,6 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 2. Put any new functionality into a function with a docstring.
-3. The pull request should work for Python 2.7 and 3.6. Check
+3. The pull request should work for all configurations. Check
    https://travis-ci.org/silmae/fpipy/pull_requests
    and make sure that the tests pass for all supported Python versions.

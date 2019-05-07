@@ -2,8 +2,6 @@
 
 """Conventions for data, coordinate and attribute names."""
 
-__all__ = []
-
 measurement_type = 'measurement'
 
 peak_coord = 'peak'
