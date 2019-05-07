@@ -2,11 +2,18 @@
 API reference
 =============
 
+------------
+Main package
+------------
 
 .. autosummary::
    :toctree:
 
    fpipy
+
+----------
+Submodules
+----------
 
 .. currentmodule:: fpipy
 
