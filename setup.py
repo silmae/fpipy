@@ -14,7 +14,6 @@ with open('CHANGELOG.rst') as history_file:
 requirements = [
     'numpy',
     'xarray',
-    'rasterio',
     'colour_demosaicing',
     'configparser;python_version<"3.4"',
 ]
@@ -27,6 +26,11 @@ test_requirements = [
     'pytest',
     'flake8',
 ]
+
+extras_requirements = {
+    'ENVI': ['rasterio'],
+    'dask': ['dask'],
+    }
 
 setup(
     name='fpipy',
@@ -49,12 +53,11 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements,
     setup_requires=setup_requirements,
+    extra_require=extras_requirements,
 )
