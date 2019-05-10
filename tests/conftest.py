@@ -3,33 +3,16 @@ try:
     import dask
 except ImportError:
     dask = None
-
 import fpipy.testing as fpt
 import fpipy.raw as fpr
 import fpipy.conventions as c
 from fpipy.raw import BayerPattern
-from fpipy.data import house_raw, house_radiance, house_calibration
+from fpipy.data import house_calibration
 
 
 @pytest.fixture(scope="session")
 def calib_seq():
     return house_calibration()
-
-
-@pytest.fixture(scope="session")
-def rad_ENVI():
-    kwargs = {}
-    if dask:
-        kwargs.update({'chunks': {'band': 1}})
-    return house_radiance(**kwargs)
-
-
-@pytest.fixture(scope="session")
-def raw_ENVI():
-    kwargs = {}
-    if dask:
-        kwargs.update({'chunks': {'band': 1}})
-    return house_raw(**kwargs)
 
 
 @pytest.fixture()
