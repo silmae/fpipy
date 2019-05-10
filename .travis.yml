@@ -13,6 +13,7 @@ env:
   - CONDA_ENV=tests
   - CONDA_ENV=tests-rasterio
   - CONDA_ENV=tests-dask
+  - CONDA_ENV=tests-dask-rasterio
 
 # Install conda and use it for the dependencies (esp. rasterio)
 before_install:
