@@ -27,7 +27,7 @@ test_requirements = [
     'flake8',
 ]
 
-extras_requirements = {
+extra_requirements = {
     'ENVI': ['rasterio'],
     'dask': ['dask'],
     }
@@ -59,5 +59,5 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     setup_requires=setup_requirements,
-    extra_require=extras_requirements,
+    extras_require=extra_requirements,
 )
