@@ -4,6 +4,7 @@
    :maxdepth: 2
    :caption: Contents:
 
+   installation
    api
    cli
    glossary
