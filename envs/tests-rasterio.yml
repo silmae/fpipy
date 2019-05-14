@@ -4,6 +4,6 @@ channels:
 dependencies:
   - numpy
   - xarray
-  - dask
+  - rasterio
   - flake8
   - pytest
