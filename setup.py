@@ -32,6 +32,10 @@ extra_requirements = {
     'dask': ['dask'],
     }
 
+entry_points = {
+    'console_scripts': ['raw2rad=fpipy.cli:raw2rad'],
+    }
+
 setup(
     name='fpipy',
     version='0.1.0',
@@ -42,7 +46,6 @@ setup(
     author_email='matti.a.eskelinen@student.jyu.fi',
     url='https://github.com/silmae/fpipy',
     packages=find_packages(),
-    scripts=['bin/raw2rad'],
     include_package_data=True,
     install_requires=requirements,
     license="MIT license",
@@ -60,4 +63,5 @@ setup(
     tests_require=test_requirements,
     setup_requires=setup_requirements,
     extras_require=extra_requirements,
+    entry_points=entry_points,
 )

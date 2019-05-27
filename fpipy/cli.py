@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 import os
 import argparse
@@ -39,54 +37,59 @@ def readable_cfa(fname):
     envifiles = [bname + e for e in ('.dat', '.hdt', '.hdr')]
     if (not all(os.path.isfile(f) for f in envifiles)
             and not os.path.isfile(bname + '.nc')):
-                raise argparse.ArgumentTypeError(
-                         '{0} is not a valid CFA file'.format(fname))
+        raise argparse.ArgumentTypeError(
+           '{0} is not a valid CFA file'.format(fname)
+        )
     else:
         return fname
 
 
-out_formats = {
-    'netCDF': save_nc,
-            }
+def getparser(out_formats):
+
+    default_format = 'netCDF'
+    default_prefix = 'RAD_'
+    default_dir = '.'
+
+    parser = argparse.ArgumentParser(
+            description='Convert raw CFA data to radiances.')
+    parser.add_argument(
+            '-f', '--format',
+            metavar='output_format',
+            default=default_format,
+            choices=out_formats.keys(),
+            help=('Output file format for the processed radiances, '
+                  'default "{0}"'.format(default_format)))
+    parser.add_argument(
+            '-o', '--odir',
+            default=default_dir,
+            metavar='output_dir',
+            type=writable_dir,
+            help=('Directory to write output files to, '
+                  'default "{0}"'.format(default_dir)))
+    parser.add_argument(
+            '-p', '--prefix',
+            default=default_prefix,
+            metavar='output_prefix',
+            type=str,
+            help=('Filename prefix to add to output filenames, '
+                  'default "{0}"'.format(default_prefix)))
+    parser.add_argument(
+            'inputs',
+            metavar='input file',
+            nargs='+',
+            type=readable_cfa,
+            help=('List of files to process to radiance.'))
+
+    return parser
 
 
-default_format = 'netCDF'
-default_prefix = 'RAD_'
-default_dir = '.'
+def raw2rad():
+    out_formats = {
+        'netCDF': save_nc,
+                }
 
-parser = argparse.ArgumentParser(
-        description='Convert raw CFA data to radiances.')
-parser.add_argument(
-        '-f', '--format',
-        metavar='output_format',
-        default=default_format,
-        choices=out_formats.keys(),
-        help=('Output file format for the processed radiances, '
-              'default "{0}"'.format(default_format)))
-parser.add_argument(
-        '-o', '--odir',
-        default=default_dir,
-        metavar='output_dir',
-        type=writable_dir,
-        help=('Directory to write output files to, '
-              'default "{0}"'.format(default_dir)))
-parser.add_argument(
-        '-p', '--prefix',
-        default=default_prefix,
-        metavar='output_prefix',
-        type=str,
-        help=('Filename prefix to add to output filenames, '
-              'default "{0}"'.format(default_prefix)))
-parser.add_argument(
-        'inputs',
-        metavar='input file',
-        nargs='+',
-        type=readable_cfa,
-        help=('List of files to process to radiance.'))
-
-
-def main(argv):
-    args = parser.parse_args(argv)
+    parser = getparser(out_formats)
+    args = parser.parse_args(sys.argv[1:])
 
     savecmd = out_formats[args.format]
     outdir = args.odir
@@ -108,7 +111,3 @@ def main(argv):
     if dask is not None:
         with ProgressBar():
             dask.compute(outputs)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
