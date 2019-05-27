@@ -1,2 +1,2 @@
-.. autoprogram:: raw2rad:parser
-    :prog: raw2rad
+.. autoprogram:: fpipy.cli:getparser()
+        :prog: raw2rad
