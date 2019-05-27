@@ -44,7 +44,12 @@ def readable_cfa(fname):
         return fname
 
 
-def getparser(out_formats):
+OUT_FORMATS = {
+        'netCDF': save_nc,
+                }
+
+
+def getparser():
 
     default_format = 'netCDF'
     default_prefix = 'RAD_'
@@ -56,7 +61,7 @@ def getparser(out_formats):
             '-f', '--format',
             metavar='output_format',
             default=default_format,
-            choices=out_formats.keys(),
+            choices=OUT_FORMATS.keys(),
             help=('Output file format for the processed radiances, '
                   'default "{0}"'.format(default_format)))
     parser.add_argument(
@@ -84,14 +89,10 @@ def getparser(out_formats):
 
 
 def raw2rad():
-    out_formats = {
-        'netCDF': save_nc,
-                }
-
-    parser = getparser(out_formats)
+    parser = getparser()
     args = parser.parse_args(sys.argv[1:])
 
-    savecmd = out_formats[args.format]
+    savecmd = OUT_FORMATS[args.format]
     outdir = args.odir
     inputs = args.inputs
     prefix = args.prefix
