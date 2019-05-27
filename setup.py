@@ -30,11 +30,13 @@ test_requirements = [
 extra_requirements = {
     'ENVI': ['rasterio'],
     'dask': ['dask'],
-    }
+}
 
 entry_points = {
-    'console_scripts': ['raw2rad=fpipy.cli:raw2rad'],
-    }
+    'console_scripts': [
+        'raw2rad = fpipy.cli:raw2rad [ENVI]',
+    ],
+}
 
 setup(
     name='fpipy',
