@@ -133,6 +133,9 @@ def raw_to_radiance(raw, **kwargs):
         metadata.
     """
 
+    # Subtract the dark reference (if needed and/or available)
+    radiances = raw.pipe(subtract_dark, **kwargs)
+
     # Calculate radiances from each mosaic image (see _raw_to_rad)
     radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
 
@@ -187,8 +190,6 @@ def _raw_to_rad(raw, dm_method='bilinear', keep_variables=None):
 
     """
     return raw.pipe(
-                subtract_dark, keep_variables
-            ).pipe(
                 _raw_to_rgb, dm_method, keep_variables
             ).pipe(
                 _rgb_to_rad, keep_variables
