@@ -170,7 +170,7 @@ def raw_to_radiance(raw, **kwargs):
     return radiances
 
 
-def _raw_to_rad(raw, dm_method='bilinear', keep_variables=None):
+def _raw_to_rad(raw, keep_variables=None):
     """Compute all passband peaks from given raw image data.
 
     Applies subtract_dark, _raw_to_rgb and _rgb_to_rad
@@ -197,13 +197,13 @@ def _raw_to_rad(raw, dm_method='bilinear', keep_variables=None):
 
     """
     return raw.pipe(
-                _raw_to_rgb, dm_method, keep_variables
+                _raw_to_rgb, keep_variables
             ).pipe(
                 _rgb_to_rad, keep_variables
             )
 
 
-def _raw_to_rgb(raw, dm_method, keep_variables=None):
+def _raw_to_rgb(raw, keep_variables=None):
     """Demosaic a dataset of CFA data.
 
     Parameters
@@ -237,7 +237,6 @@ def _raw_to_rgb(raw, dm_method, keep_variables=None):
     raw[c.rgb_data] = demosaic(
             raw[c.dark_corrected_cfa_data],
             pattern,
-            dm_method
             )
 
     return _drop_variable(raw, c.dark_corrected_cfa_data, keep_variables)
@@ -373,7 +372,7 @@ class BayerPattern(IntEnum):
         return self.name
 
 
-def demosaic(cfa, pattern, dm_method):
+def demosaic(cfa, pattern):
     """Perform demosaicing on a DataArray.
 
     Parameters
@@ -392,15 +391,8 @@ def demosaic(cfa, pattern, dm_method):
     """
     pattern = BayerPattern.get(pattern).name
 
-    dm_methods = {
-        'bilinear': cdm.demosaicing_CFA_Bayer_bilinear,
-        'Malvar2004': cdm.demosaicing_CFA_Bayer_Malvar2004,
-        'Menon2007': cdm.demosaicing_CFA_Bayer_Menon2007,
-        }
-    dm_alg = dm_methods[dm_method]
-
     res = xr.apply_ufunc(
-        dm_alg,
+        cdm.demosaicing_CFA_Bayer_bilinear,
         cfa,
         kwargs=dict(pattern=pattern),
         input_core_dims=[(c.height_coord, c.width_coord)],
