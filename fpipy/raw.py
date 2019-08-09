@@ -137,7 +137,14 @@ def raw_to_radiance(raw, **kwargs):
     radiances = raw.pipe(subtract_dark, **kwargs)
 
     # Calculate radiances from each mosaic image (see _raw_to_rad)
-    radiances = raw.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
+    # radiances = radiances.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
+
+    radiances = radiances.groupby(
+                c.image_index
+            ).apply(
+                _raw_to_rgb, dm_method='bilinear', **kwargs).persist()
+
+    radiances = radiances.groupby(c.image_index).apply(_rgb_to_rad, **kwargs)
 
     # Create a band coordinate including all possible peaks from each index
     # and then drop any that don't actually have data
