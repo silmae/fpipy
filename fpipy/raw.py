@@ -270,9 +270,9 @@ def _rgb_to_rad(rgb, keep_variables=None):
         raise ValueError('Exposure time not specified.')
 
     # Select only peaks that have data (as defined by c.number_of_peaks)
-    rgb = rgb.sel(
-        **{c.peak_coord: rgb[c.peak_coord] <= rgb[c.number_of_peaks]}
-        )
+    # rgb = rgb.sel(
+    #    **{c.peak_coord: rgb[c.peak_coord] <= rgb[c.number_of_peaks]}
+    #    )
 
     # Compute the inversion to radiance and scale by exposure time
     rgb[c.radiance_data] = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
@@ -316,7 +316,7 @@ def subtract_dark(ds, keep_variables=None):
 
     ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
             _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
-            dask='parallelized',
+            dask='allowed',
             output_dtypes=[
                 np.result_type(ds[c.cfa_data], ds[c.dark_reference_data])
                 ],
