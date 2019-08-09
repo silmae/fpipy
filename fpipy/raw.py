@@ -137,14 +137,14 @@ def raw_to_radiance(raw, **kwargs):
     radiances = raw.pipe(subtract_dark, **kwargs)
 
     # Calculate radiances from each mosaic image (see _raw_to_rad)
-    # radiances = radiances.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
+    radiances = radiances.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
 
-    radiances = radiances.groupby(
-                c.image_index
-            ).apply(
-                _raw_to_rgb, dm_method='bilinear', **kwargs).persist()
+    # radiances = radiances.groupby(
+    #             c.image_index
+    #         ).apply(
+    #             _raw_to_rgb, dm_method='bilinear', **kwargs)
 
-    radiances = radiances.groupby(c.image_index).apply(_rgb_to_rad, **kwargs)
+    # radiances = radiances.groupby(c.image_index).apply(_rgb_to_rad, **kwargs)
 
     # Create a band coordinate including all possible peaks from each index
     # and then drop any that don't actually have data
@@ -286,9 +286,9 @@ def _rgb_to_rad(rgb, keep_variables=None):
 
     # Add CF attributes
     rgb[c.radiance_data] = rgb[c.radiance_data].assign_attrs({
-        'long_name': 'radiance per unit wavelength',
-        'units': 'W sr-1 m-2 nm-1',
-        })
+       'long_name': 'radiance per unit wavelength',
+       'units': 'W sr-1 m-2 nm-1',
+       })
 
     return _drop_variable(rgb, c.rgb_data, keep_variables)
 
@@ -322,12 +322,12 @@ def subtract_dark(ds, keep_variables=None):
     """
 
     ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
-            _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
-            dask='allowed',
-            output_dtypes=[
-                np.result_type(ds[c.cfa_data], ds[c.dark_reference_data])
-                ],
-            )
+        _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
+        dask='parallelized',
+        output_dtypes=[
+            np.result_type(ds[c.cfa_data], ds[c.dark_reference_data])
+            ],
+        )
 
     ds = _drop_variable(ds, c.cfa_data, keep_variables)
     ds = _drop_variable(ds, c.dark_reference_data, keep_variables)
