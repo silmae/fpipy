@@ -322,7 +322,7 @@ def subtract_dark(ds, keep_variables=None):
 
     ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
         _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
-        dask='parallelized',
+        dask='allowed',
         output_dtypes=[
             np.result_type(ds[c.cfa_data], ds[c.dark_reference_data])
             ],
