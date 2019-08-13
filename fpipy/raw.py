@@ -116,11 +116,6 @@ def raw_to_radiance(raw, **kwargs):
         `c.cfa_data`,
         `c.dark_reference_data`,
 
-    dm_method : str, optional
-        **{'bilinear', 'DDFAPD', 'Malvar2004', 'Menon2007'}**
-        Demosaicing method. Default is 'bilinear'. See the `colour_demosaicing`
-        package for more info on the different methods.
-
     keep_variables: list-like, optional
         List of variables to keep in the result, default None.
         If you wish to keep the intermediate data, pass the relevant
@@ -138,13 +133,6 @@ def raw_to_radiance(raw, **kwargs):
 
     # Calculate radiances from each mosaic image (see _raw_to_rad)
     radiances = radiances.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
-
-    # radiances = radiances.groupby(
-    #             c.image_index
-    #         ).apply(
-    #             _raw_to_rgb, dm_method='bilinear', **kwargs)
-
-    # radiances = radiances.groupby(c.image_index).apply(_rgb_to_rad, **kwargs)
 
     # Create a band coordinate including all possible peaks from each index
     # and then drop any that don't actually have data
@@ -274,11 +262,6 @@ def _rgb_to_rad(rgb, keep_variables=None):
         exposure = rgb[c.rgb_data].attrs[c.genicam_exposure] * 0.001
     else:
         raise ValueError('Exposure time not specified.')
-
-    # Select only peaks that have data (as defined by c.number_of_peaks)
-    # rgb = rgb.sel(
-    #    **{c.peak_coord: rgb[c.peak_coord] <= rgb[c.number_of_peaks]}
-    #    )
 
     # Compute the inversion to radiance and scale by exposure time
     rgb[c.radiance_data] = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
