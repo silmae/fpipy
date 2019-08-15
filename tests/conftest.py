@@ -6,7 +6,7 @@ except ImportError:
 import fpipy.testing as fpt
 import fpipy.raw as fpr
 import fpipy.conventions as c
-from fpipy.raw import BayerPattern
+from fpipy.bayer import BayerPattern
 from fpipy.data import house_calibration
 
 

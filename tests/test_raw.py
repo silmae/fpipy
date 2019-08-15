@@ -9,7 +9,7 @@ import xarray.testing as xrt
 
 import fpipy.raw as fpr
 import fpipy.conventions as c
-from fpipy.raw import BayerPattern
+from fpipy.bayer import BayerPattern
 
 
 def test_read_calibration_format(calib_seq):

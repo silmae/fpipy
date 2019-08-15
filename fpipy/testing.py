@@ -5,7 +5,7 @@ import xarray as xr
 import colour_demosaicing as cdm
 
 from . import conventions as c
-from .raw import BayerPattern
+from .bayer import BayerPattern
 
 
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):

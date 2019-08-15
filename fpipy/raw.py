@@ -18,11 +18,11 @@ Calculating radiances from raw data and plotting them can be done as follows::
     rad.swap_dims({'band': 'wavelength'}).radiance.sel(wavelength=600,
                                                       method='nearest').plot()
 """
-from enum import IntEnum
 import xarray as xr
 import numpy as np
-import colour_demosaicing as cdm
 from . import conventions as c
+from .utils import _drop_variable
+from .bayer import demosaic_bilin
 
 
 def raw_to_reflectance(raw, whiteraw, keep_variables=None):
@@ -129,7 +129,7 @@ def raw_to_radiance(raw, **kwargs):
     """
 
     # Subtract the dark reference (if needed and/or available)
-    radiances = raw.pipe(subtract_dark, **kwargs)
+    radiances = subtract_dark(raw, **kwargs)
 
     # Calculate radiances from each mosaic image (see _raw_to_rad)
     radiances = radiances.groupby(c.image_index).apply(_raw_to_rad, **kwargs)
@@ -140,6 +140,7 @@ def raw_to_radiance(raw, **kwargs):
     radiances = radiances.stack(
             **{c.band_index: (c.image_index, c.peak_coord)}
             )
+
     radiances = radiances.sel(
         **{c.band_index:
             radiances[c.peak_coord] <= radiances[c.number_of_peaks]}
@@ -185,49 +186,10 @@ def _raw_to_rad(raw, keep_variables=None):
 
     """
     return raw.pipe(
-                _raw_to_rgb, keep_variables
+                 demosaic_bilin
             ).pipe(
                 _rgb_to_rad, keep_variables
             )
-
-
-def _raw_to_rgb(raw, keep_variables=None):
-    """Demosaic a dataset of CFA data.
-
-    Parameters
-    ----------
-    raw: xr.Dataset
-        Dataset containing `c.dark_corrected_cfa_data` and mosaic pattern
-        information either as a variable or an attribute of the cfa variable.
-
-    keep_variables: list-like, optional
-        List of variables to keep in the result, default None.
-        If you wish to keep the raw CFA data, pass a list including
-        `fpipy.conventions.cfa_data`.
-
-    Returns
-    -------
-    res: xr.Dataset
-        Dataset containing the demosaiced R, G and B layers as a variable.
-    """
-    attrs = raw[c.dark_corrected_cfa_data].attrs
-    if c.cfa_pattern_data in raw:
-        pattern = str(raw[c.cfa_pattern_data].values)
-    elif c.genicam_pattern_data in raw:
-        pattern = str(raw[c.genicam_pattern_data].values)
-    elif c.cfa_pattern_data in attrs:
-        pattern = str(attrs[c.cfa_pattern_data])
-    elif c.genicam_pattern_data in attrs:
-        pattern = str(attrs[c.genicam_pattern_data])
-    else:
-        raise ValueError('Bayer pattern not specified.')
-
-    raw[c.rgb_data] = demosaic(
-            raw[c.dark_corrected_cfa_data],
-            pattern,
-            )
-
-    return _drop_variable(raw, c.dark_corrected_cfa_data, keep_variables)
 
 
 def _rgb_to_rad(rgb, keep_variables=None):
@@ -251,6 +213,7 @@ def _rgb_to_rad(rgb, keep_variables=None):
 
     """
 
+    rgb = rgb.copy()
     # Retrieve exposure time
     if c.camera_exposure in rgb:
         exposure = rgb[c.camera_exposure].data
@@ -264,7 +227,7 @@ def _rgb_to_rad(rgb, keep_variables=None):
         raise ValueError('Exposure time not specified.')
 
     # Compute the inversion to radiance and scale by exposure time
-    rgb[c.radiance_data] = rgb[c.sinv_data].dot(rgb[c.rgb_data]) / exposure
+    rgb[c.radiance_data] = rgb[c.sinv_data].dot(rgb[c.rgb_data] / exposure)
 
     # Add CF attributes
     rgb[c.radiance_data] = rgb[c.radiance_data].assign_attrs({
@@ -302,7 +265,7 @@ def subtract_dark(ds, keep_variables=None):
         `fpipy.conventions.dark_corrected_cfa_data`
 
     """
-
+    ds = ds.copy()
     ds[c.dark_corrected_cfa_data] = xr.apply_ufunc(
         _subtract_clip, ds[c.cfa_data], ds[c.dark_reference_data],
         dask='allowed',
@@ -323,92 +286,3 @@ def _subtract_clip(x, y):
     """
     result = (x > y) * (x - y)
     return result
-
-
-class BayerPattern(IntEnum):
-    """Enumeration of the Bayer Patterns as used by FPI headers."""
-    GBRG = 0
-    GRBG = 1
-    BGGR = 2
-    RGGB = 3
-
-    # Lowercase aliases.
-    gbrg = 0
-    grbg = 1
-    bggr = 2
-    rggb = 3
-
-    # Aliases (GenICam PixelColorFilter values)
-    BayerGB = 0
-    BayerGR = 1
-    BayerBG = 2
-    BayerRG = 3
-
-    @classmethod
-    def get(self, pattern):
-        try:
-            return self[pattern]
-        except (KeyError, AttributeError):
-            return self(pattern)
-
-    def __str__(self):
-        return self.name
-
-
-def demosaic(cfa, pattern):
-    """Perform demosaicing on a DataArray.
-
-    Parameters
-    ----------
-    cfa: xarray.DataArray
-        Array containing a stack of CFA images.
-
-    pattern: BayerPattern or str
-        Bayer pattern used to demosaic the CFA.
-
-    dm_method: str
-
-    Returns
-    -------
-    xarray.DataArray
-    """
-    pattern = BayerPattern.get(pattern).name
-
-    res = xr.apply_ufunc(
-        cdm.demosaicing_CFA_Bayer_bilinear,
-        cfa,
-        kwargs=dict(pattern=pattern),
-        input_core_dims=[(c.height_coord, c.width_coord)],
-        output_core_dims=[(c.RGB_dims)],
-        dask='parallelized',
-        output_dtypes=[np.float64],
-        output_sizes={c.colour_coord: 3}
-        )
-    res.coords[c.colour_coord] = ['R', 'G', 'B']
-    return res
-
-
-def _drop_variable(ds, variable, keep_variables):
-    """Drop a given variable from the dataset unless whitelisted.
-
-    Parameters
-    ----------
-
-    ds : xr.Dataset
-        Dataset to drop variable from.
-
-    variable : str
-        Variable name to drop.
-
-    keep_variables : list-like
-        Whitelist of variables to keep.
-
-    Returns
-    -------
-    xr.Dataset
-        Original dataset with or without the given variable.
-    """
-    if not keep_variables or variable not in keep_variables:
-        return ds.drop(variable)
-    else:
-        return ds

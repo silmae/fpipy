@@ -4,7 +4,7 @@
 
 import numpy as np
 import xarray as xr
-from .raw import BayerPattern
+from .bayer import BayerPattern
 from . import conventions as c
 
 
