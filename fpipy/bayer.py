@@ -114,6 +114,41 @@ def bilin_kernel():
     return krnl
 
 
+def _raw_to_rad_frame(ds, masks, g_krnl, rb_krnl, keep_variables=None):
+    cfa = ds[c.dark_corrected_cfa_data].values
+    sinvs = ds[c.sinv_data].values
+    exposure = ds[c.camera_exposure].values
+
+    ds[c.radiance_data] = (
+        (c.peak_coord, c.height_coord, c.width_coord),
+        _raw_to_rad_numpy(cfa, masks, g_krnl, rb_krnl, sinvs, exposure)
+    )
+    ds = _drop_variable(ds, c.dark_corrected_cfa_data, keep_variables)
+    ds = _drop_variable(ds, c.sinv_data, keep_variables)
+    ds = _drop_variable(ds, c.camera_exposure, keep_variables)
+    return ds
+
+
+def _raw_to_rad_numpy(cfa, masks, g_krnl, rb_krnl, sinvs, exposure):
+    """
+    cfa : array-like
+        (y, x)
+    masks : array-like
+        (colour, y, x)
+    sinvs : array-like
+        (peak, colour)
+    """
+    rgbs = cfa * masks
+    rad = np.zeros((sinvs.shape[0], *cfa.shape))
+
+    rgbs[0, ::] = convolve(rgbs[0, ::], rb_krnl, mode='mirror')
+    rgbs[1, ::] = convolve(rgbs[1, ::], g_krnl, mode='mirror')
+    rgbs[2, ::] = convolve(rgbs[2, ::], rb_krnl, mode='mirror')
+
+    rad = np.tensordot(sinvs, rgbs, axes=1) / exposure
+    return rad
+
+
 def demosaic_cdm(cfa, pattern):
     """Perform demosaicing on a DataArray.
 

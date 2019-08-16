@@ -22,7 +22,7 @@ import xarray as xr
 import numpy as np
 from . import conventions as c
 from .utils import _drop_variable
-from .bayer import demosaic_bilin
+from .bayer import demosaic_bilin, create_mask, _raw_to_rad_frame
 
 
 def raw_to_reflectance(raw, whiteraw, keep_variables=None):
@@ -100,6 +100,48 @@ def radiance_to_reflectance(radiance, white, keep_variables=None):
         })
 
     return _drop_variable(res, c.radiance_data, keep_variables)
+
+
+def raw_to_radiance_fast(ds, keep_variables=None):
+    ds = ds.copy()
+    ds = subtract_dark(ds, keep_variables)
+
+    masks = np.rollaxis(create_mask(ds.isel(index=0)).data, -1, 0)
+
+    g_krnl = np.array(
+        [[0, 1, 0],
+         [1, 4, 1],
+         [0, 1, 0]], dtype=np.float64) / 4
+
+    rb_krnl = np.array(
+        [[1, 2, 1],
+         [2, 4, 2],
+         [1, 2, 1]], dtype=np.float64) / 4
+
+    ds = ds.groupby(c.image_index).apply(
+            _raw_to_rad_frame,
+            masks=masks, g_krnl=g_krnl, rb_krnl=rb_krnl,
+            keep_variables=keep_variables)
+    ds = ds.stack(
+            **{c.band_index: (c.image_index, c.peak_coord)}
+            )
+
+    ds = ds.sel(
+        **{c.band_index:
+            ds[c.peak_coord] <= ds[c.number_of_peaks]}
+        )
+
+    # sort ascending by wavelength
+    ds = ds.sortby(c.wavelength_data)
+
+    # replace the multiindex band coordinate with the
+    # explicit values (0...nbands)
+    ds = ds.reset_index(c.band_index)
+    ds = ds.assign_coords(
+            **{c.band_index: ds[c.band_index] + 1}
+            )
+
+    return ds
 
 
 def raw_to_radiance(raw, **kwargs):
