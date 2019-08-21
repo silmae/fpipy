@@ -10,12 +10,17 @@ from .bayer import BayerPattern
 
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
     """Raw data (CFA, dark and metadata)."""
-    b, _, _ = cfa.shape
+    b, y, x = cfa.shape
     sinvs, npeaks, wls = metas
 
     data = xr.DataArray(
         cfa,
         dims=c.cfa_dims,
+        coords={
+            c.image_index: np.arange(b),
+            c.height_coord: np.arange(y) + 0.5,
+            c.width_coord: np.arange(x) + 0.5
+            }
         )
 
     if not np.isscalar(exposure):
@@ -120,6 +125,8 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
                 c.image_index: (c.band_index, idxs),
                 c.peak_coord: (c.band_index, peak),
                 c.band_index: (c.band_index, np.arange(b) + 1),
+                c.height_coord: np.arange(y) + 0.5,
+                c.width_coord: np.arange(x) + 0.5
                 },
             attrs={
                 'long_name': 'radiance per unit wavelength',
