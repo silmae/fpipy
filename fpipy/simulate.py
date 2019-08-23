@@ -6,6 +6,145 @@
 import xarray as xr
 import numpy as np
 from colour_demosaicing import masks_CFA_Bayer
+from .raw import BayerPattern
+
+
+def bayer_sensor(radiance, exposure, T_mosaic, Q_eff, pxformat):
+    """Simulate a Bayer sensor image.
+
+    Parameters
+    ----------
+    radiance : array-like
+        (y, x, band) array of radiance values.
+
+    exposure : float
+        Exposure (integration time) in milliseconds.
+
+    T_mosaic : array-like
+        (y, x, band) array of spectral transmittances for the Bayer mosaic.
+
+    Q_eff : array-like
+        Quantum efficiencies of the sensor for each band/wavelength.
+
+    pxformat : str
+        Pixel format to discretize result to.
+
+    Result
+    ------
+    np.ndarray
+        (y, x) Bayer mosaic
+    """
+    mosaic_radiance = T_mosaic * radiance
+    return mono_sensor(mosaic_radiance, exposure, Q_eff, pxformat)
+
+
+def mosaic_transmittances(shape, pattern, T_rgb):
+    """Transmittances of a Bayer filter mosaic.
+
+    Parameters
+    ----------
+    shape : pair of int
+        (y, x) Shape of the filter array.
+    pattern : BayerPattern or str
+        The Bayer filter pattern of the array.
+    T_rgb : array-like
+        (3, b) arrays of transmittances of the R, G and B
+        pixels for each band.
+
+    Result
+    ------
+    np.ndarray
+        (y, x, b) array of mosaic responses for each band.
+    """
+    pattern = BayerPattern.get(pattern).name
+    masks = np.stack(masks_CFA_Bayer(shape, pattern), axis=0)
+
+    return np.einsum('cb,cyx->yxb', T_rgb, masks)
+
+
+def mono_sensor(radiance, exposure, Qeff, pxformat):
+    """Simulate a monochromatic sensor image.
+
+    Simulates a linear monochromatic sensor response for a given radiance
+    signal and exposure.
+
+    Parameters
+    ----------
+    radiance : array-like
+        (y, x, band) array of radiance values.
+
+    exposure : float
+        Exposure (integration time) in milliseconds.
+
+    Q_eff : array-like
+        Quantum efficiencies of the sensor for each band/wavelength.
+
+    pxformat : str
+        Pixel format to discretize result to.
+
+    Return
+    ------
+    np.ndarray
+        (y, x) monochromatic image.
+    """
+    res = exposure * np.dot(radiance, Qeff)
+    return quantize(res, pxformat)
+
+
+def quantize(im, pxformat):
+    """Quantize a floating-point image to the desired pixel format.
+
+    Simple quantization to maximum levels allowed by the pixel format
+    and including the full range of the data.
+
+    Parameters
+    ----------
+    im : array-like
+        Array of floating point values.
+
+    pxformat : str
+        Pixel format string (as defined in GenICAM).
+    """
+
+    # Bits to use for discretization
+    bits = {
+        'Mono16': 16,
+        'Mono12': 12,
+        'BayerRG12': 12,
+        'BayerGB12': 12,
+        'BayerBG12': 12,
+        'BayerGB12': 12,
+    }
+
+    return _quantize_mono_uint(im, bits[pxformat])
+
+
+def _quantize_mono_uint(x, bits):
+    """Quantize the given array into bits worth of bins.
+
+    Parameters
+    ----------
+    x : array-like
+        Array of values to be quantized
+    bits : int
+        Number of bits in the output
+
+    Result
+    ------
+    np.ndarray
+        Array of values between (0, 2**bits - 1) using
+        the smallest integer type possible
+        (See `np.min_scalar_type` for more info).
+    """
+    new_max = 2 ** bits - 1
+    new_type = np.min_scalar_type(new_max)
+    qfac = np.nanmax(x) / new_max
+
+    x = x - np.nanmin(x)
+    x = x / qfac
+
+    bins = np.arange(0, 2**bits)
+    return np.digitize(x, bins, right=True).astype(new_type)
 
 
 def create_cfa(rad, S, pattern):
