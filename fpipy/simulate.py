@@ -9,6 +9,51 @@ from colour_demosaicing import masks_CFA_Bayer
 from .raw import BayerPattern
 
 
+def FPI_bayer_imager(radiance, T_fpi, exposure, T_mosaic, Q_eff, pxformat):
+    """Simulate a Fabry-Perot interferometer filtered Bayer sensor image.
+
+    Parameters
+    ----------
+    radiance : array-like
+        (y, x, band) array of radiance values.
+
+    T_fpi : array-like
+        (a, b) array of Fabry-Perot interferometer transmittances
+        for each band and gap length value a.
+
+    exposure : float
+        Exposure (integration time) in milliseconds.
+
+    T_mosaic : array-like
+        (y, x, band) array of spectral transmittances for the Bayer mosaic.
+
+    Q_eff : array-like
+        Quantum efficiencies of the sensor for each band/wavelength.
+
+    pxformat : str
+        Pixel format to discretize result to.
+
+    Result
+    ------
+    np.ndarray
+        (a, y, x) stack of Bayer mosaic images
+    """
+
+    res = np.zeros((*radiance.shape[:-1], T_fpi.shape[0]))
+    for a, T_gap in enumerate(T_fpi):
+        # T_fpi is usually mostly zero, so optimize by indexing
+        # the data arrays
+        peak_idx = np.nonzero(T_gap)
+        res[a,::] = bayer_sensor(
+            T_gap[peak_idx] * radiances[::, peak_idx],
+            exposure,
+            T_mosaic[::, peak_idx],
+            Q_eff[peak_idx],
+            pxformat
+            )
+    return res
+
+
 def bayer_sensor(radiance, exposure, T_mosaic, Q_eff, pxformat):
     """Simulate a Bayer sensor image.
 
