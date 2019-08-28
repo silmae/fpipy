@@ -9,6 +9,50 @@ from colour_demosaicing import masks_CFA_Bayer
 from .raw import BayerPattern
 
 
+def FPI_bayer_spectral_signal(T_fpi, Q_eff, T_rgb):
+    """Spectral signal for a given FPI gap and order.
+
+    Parameters
+    ----------
+    T_fpi : array-like
+        (3, band) array of FPI transmittances for orders n, n+1 and n+2
+        for a given etalon gap length.
+
+    Q_eff : array-like
+        (band,) array of quantum efficiencies of the sensor
+
+    T_rgb : array-like
+        (3, band) array of tranmittances of the R, G and B pixels.
+
+    Returns
+    -------
+    S : np.ndarray
+        (3, 3) matrix of effective transmittances for the FPI imager.
+    """
+    return np.einsum('pb,b,cb->pc', T_fpi, Q_eff, T_rgb)
+
+
+def FPI_bandpass_lims(d, n):
+    """Bandpass filter limits for three orders of an FPI at given gap.
+
+    Parameters
+    ----------
+    d : float
+        Gap length of the Fabry-Perot etalon.
+
+    n : int
+        First order of the three included in the bandpass (n, n+1, n+2)
+
+    Returns
+    -------
+    (lmin, lmax) : tuple of float
+        Minimum and maximum wavelengths that include the three FPI orders.
+    """
+    lmax = 2 * d * (1 / n + 1 / (2 * n * (n - 1)))
+    lmin = 2 * d * (1 / n - 1 / (2 * n * (n - 1)))
+    return (lmin, lmax)
+
+
 def FPI_bayer_imager(radiance, T_fpi, exposure, T_mosaic, Q_eff, pxformat):
     """Simulate a Fabry-Perot interferometer filtered Bayer sensor image.
 
