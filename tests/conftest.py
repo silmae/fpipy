@@ -28,15 +28,23 @@ def metas(size, wl_range):
         return fpt.metadata(size, wl_range)
 
 
+@pytest.fixture(params=[1, 3])
+def bands(request):
+    return request.param
+
+
 @pytest.fixture(
     params=[
-        (1, 4, 4),
-        (2, 2, 2),
-        (3, 2, 2),
-        (1, 2, 4),
+        (2, 2),
+        (3, 7),
         ])
-def size(request):
+def shape(request):
     return request.param
+
+
+@pytest.fixture
+def size(bands, shape):
+    return (bands, *shape)
 
 
 @pytest.fixture(
@@ -53,7 +61,7 @@ def pattern(request):
 @pytest.fixture(
     params=[
         'BayerRG12',
-        'BayerGB16',
+        'BayerBG16',
         None,
         ])
 def pxformat(request):
