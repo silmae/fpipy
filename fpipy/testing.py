@@ -7,7 +7,7 @@ from . import conventions as c
 from .bayer import BayerPattern, _bayer_masks
 
 
-def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
+def raw(cfa, dark, pattern, exposure, gain, metas, wl_range, pxformat):
     """Raw data (CFA, dark and metadata)."""
     b, y, x = cfa.shape
     sinvs, npeaks, wls = metas
@@ -34,6 +34,7 @@ def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
             (c.image_index, np.full((b,), exposure)),
         c.camera_gain:
             (c.image_index, np.full((b,), gain)),
+        'PixelFormat': pxformat,
         })
 
     return raw
