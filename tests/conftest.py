@@ -50,6 +50,16 @@ def pattern(request):
     return request.param
 
 
+@pytest.fixture(
+    params=[
+        'BayerRG12',
+        'BayerGB16',
+        None,
+        ])
+def pxformat(request):
+    return request.param
+
+
 @pytest.fixture
 def cfa(size, pattern):
     return fpt.cfa(size, pattern, R=1, G=2, B=5)
@@ -77,8 +87,9 @@ def gain(request):
 
 
 @pytest.fixture
-def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
-    res = fpt.raw(cfa, dark, pattern, exposure, gain, metas, wl_range)
+def raw(cfa, dark, pattern, exposure, gain, metas, wl_range, pxformat):
+    res = fpt.raw(
+            cfa, dark, pattern, exposure, gain, metas, wl_range, pxformat)
     if dask:
         return res.chunk({c.image_index: 1})
     else:
