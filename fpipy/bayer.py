@@ -69,13 +69,13 @@ def inversion_method(pixelformat):
         'BayerGR12': demosaic_and_invert_12bit_low,
         'BayerRG12': demosaic_and_invert_12bit_low,
         'BayerGB12': demosaic_and_invert_12bit_low,
-        'BayerGB12': demosaic_and_invert_12bit_low,
+        'BayerBG12': demosaic_and_invert_12bit_low,
         # We assume 16 bit formats are actually from a 12bit ADC, stored
         # in the high bits (since that is the case for FLIR/PtGrey cameras)
         'BayerGR16': demosaic_and_invert_12bit_high,
         'BayerRG16': demosaic_and_invert_12bit_high,
         'BayerGB16': demosaic_and_invert_12bit_high,
-        'BayerGB16': demosaic_and_invert_12bit_high,
+        'BayerBG16': demosaic_and_invert_12bit_high,
         }
     default = demosaic_and_invert_float
 
