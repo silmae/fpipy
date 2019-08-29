@@ -2,10 +2,9 @@
 
 import numpy as np
 import xarray as xr
-import colour_demosaicing as cdm
 
 from . import conventions as c
-from .bayer import BayerPattern
+from .bayer import BayerPattern, _bayer_masks
 
 
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range):
@@ -45,7 +44,7 @@ def cfa(size, pattern, R, G, B):
     b, y, x = size
 
     pattern = BayerPattern.get(pattern).name
-    masks = cdm.bayer.masks_CFA_Bayer((y, x), pattern)
+    masks, _ = _bayer_masks((y, x), pattern)
     cfa = np.zeros(size, dtype=np.uint16)
     cfa[:, masks[0]] = R
     cfa[:, masks[1]] = G

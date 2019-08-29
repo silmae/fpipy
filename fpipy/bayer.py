@@ -1,183 +1,277 @@
 from enum import IntEnum
 import numpy as np
 import xarray as xr
-import colour_demosaicing as cdm
 from scipy.ndimage import convolve
 from . import conventions as c
-from .utils import _drop_variable
 
 
-def _raw_to_rgb(raw, keep_variables=None):
-    """Demosaic a dataset of CFA data.
+def find_bayer_pattern(ds):
+    """Retrieve Bayer pattern string from image data."""
+    attrs = ds[c.dark_corrected_cfa_data].attrs
+    if c.cfa_pattern_data in ds:
+        pattern = ds[c.cfa_pattern_data]
+    elif c.genicam_pattern_data in ds:
+        pattern = ds[c.genicam_pattern_data]
+    elif c.cfa_pattern_data in attrs:
+        pattern = attrs[c.cfa_pattern_data]
+    elif c.genicam_pattern_data in attrs:
+        pattern = attrs[c.genicam_pattern_data]
+    else:
+        raise ValueError('Bayer pattern not specified.')
+    return pattern
+
+
+def bayer_masks(raw):
+    """Create Bayer filter mosaic colour separation masks.
 
     Parameters
     ----------
-    raw: xr.Dataset
-        Dataset containing `c.dark_corrected_cfa_data` and mosaic pattern
-        information either as a variable or an attribute of the cfa variable.
-
-    keep_variables: list-like, optional
-        List of variables to keep in the result, default None.
-        If you wish to keep the raw CFA data, pass a list including
-        `fpipy.conventions.cfa_data`.
+    raw : xr.Dataset
+        Dataset containing CFA and associated pattern data.
 
     Returns
     -------
-    res: xr.Dataset
-        Dataset containing the demosaiced R, G and B layers as a variable.
+    xr.DataArray
+        (color, y, x) array of Bayer masks
     """
-    raw = raw.copy()
-    attrs = raw[c.dark_corrected_cfa_data].attrs
-    if c.cfa_pattern_data in raw:
-        pattern = str(raw[c.cfa_pattern_data].values)
-    elif c.genicam_pattern_data in raw:
-        pattern = str(raw[c.genicam_pattern_data].values)
-    elif c.cfa_pattern_data in attrs:
-        pattern = str(attrs[c.cfa_pattern_data])
-    elif c.genicam_pattern_data in attrs:
-        pattern = str(attrs[c.genicam_pattern_data])
-    else:
-        raise ValueError('Bayer pattern not specified.')
+    shape = (raw[c.height_coord].size, raw[c.width_coord].size)
+    pattern = np.unique(find_bayer_pattern(raw)).item()
 
-    raw[c.rgb_data] = demosaic_cdm(
-            raw[c.dark_corrected_cfa_data],
-            pattern,
-            )
-
-    return _drop_variable(raw, c.dark_corrected_cfa_data, keep_variables)
-
-
-def demosaic_bilin(raw, keep_variables=None):
-    raw = raw.copy()
-    raw['bilin_kernel'] = bilin_kernel()
-    raw['bayer_mask'] = create_mask(raw)
-
-    raw[c.rgb_data] = raw.groupby(c.colour_coord).apply(_convolve)
-
-    raw = _drop_variable(raw, c.dark_corrected_cfa_data, keep_variables)
-    raw = _drop_variable(raw, 'bilin_kernel', keep_variables)
-    raw = _drop_variable(raw, 'bayer_mask', keep_variables)
-    return raw
-
-
-def _convolve(raw):
-    res = xr.apply_ufunc(
-        convolve,
-        raw[c.dark_corrected_cfa_data] * raw['bayer_mask'],
-        raw['bilin_kernel'],
-        kwargs={'mode': 'mirror'},
-        dask='parallelized',
-        input_core_dims=[[], ['krnl_x', 'krnl_y']],
-        output_dtypes=[np.uint16],
-    ) // 4
-    return res
-
-
-def create_mask(raw):
-    attrs = raw[c.dark_corrected_cfa_data].attrs
-    if c.cfa_pattern_data in raw:
-        pattern = str(raw[c.cfa_pattern_data].values)
-    elif c.genicam_pattern_data in raw:
-        pattern = str(raw[c.genicam_pattern_data].values)
-    elif c.cfa_pattern_data in attrs:
-        pattern = str(attrs[c.cfa_pattern_data])
-    elif c.genicam_pattern_data in attrs:
-        pattern = str(attrs[c.genicam_pattern_data])
-    else:
-        raise ValueError('Bayer pattern not specified.')
-    pattern = BayerPattern.get(pattern).name
-    shape = raw[c.dark_corrected_cfa_data].shape
-
+    masks, coords = _bayer_masks(shape, pattern)
     res = xr.DataArray(
-            np.stack(cdm.bayer.masks_CFA_Bayer(shape, pattern), axis=-1),
-            dims=c.RGB_dims,
-            coords={c.colour_coord: ['R', 'G', 'B']}
+        masks,
+        dims=(c.colour_coord, c.height_coord, c.width_coord),
+        coords={
+            c.colour_coord: coords,
+            c.height_coord: raw[c.height_coord],
+            c.width_coord: raw[c.width_coord],
+            }
     )
     return res
 
 
-def bilin_kernel():
-    H_G = np.array(
+def _bayer_masks(shape, pattern):
+    pattern = BayerPattern.get(pattern).name
+
+    channels = dict((channel, np.zeros(shape, dtype=np.bool))
+                    for channel in 'RGB')
+    for channel, (y, x) in zip(pattern, [(0, 0), (0, 1), (1, 0), (1, 1)]):
+        channels[channel][y::2, x::2] = 1
+
+    masks = np.stack(list(channels.values()), axis=0)
+    return masks, list(channels.keys())
+
+
+def inversion_method(pixelformat):
+    """Select an efficient radiance inversion method based on bit format.
+    """
+    methods = {
+        'BayerGR12': demosaic_and_invert_12bit_low,
+        'BayerRG12': demosaic_and_invert_12bit_low,
+        'BayerGB12': demosaic_and_invert_12bit_low,
+        'BayerGB12': demosaic_and_invert_12bit_low,
+        # We assume 16 bit formats are actually from a 12bit ADC, stored
+        # in the high bits (since that is the case for FLIR/PtGrey cameras)
+        'BayerGR16': demosaic_and_invert_12bit_high,
+        'BayerRG16': demosaic_and_invert_12bit_high,
+        'BayerGB16': demosaic_and_invert_12bit_high,
+        'BayerGB16': demosaic_and_invert_12bit_high,
+        }
+    default = demosaic_and_invert_float
+
+    return methods.get(pixelformat, default)
+
+
+def demosaic_and_invert_float(mosaic, masks, sinvs, exposure):
+    """Compute radiances from a Bayer filter mosaic.
+
+    Demosaics the mosaic image and computes the radiance(s).
+    See `demosaic_bilin` and `invert_RGB` for more information.
+    """
+    rad = invert_RGB(
+        demosaic_bilin_float(mosaic, masks),
+        sinvs,
+        exposure
+    )
+    return rad
+
+
+def demosaic_and_invert_12bit_high(mosaic, masks, sinvs, exposure):
+    """Compute radiances from a Bayer filter mosaic.
+
+    Demosaics the mosaic image and computes the radiance(s).
+    See `demosaic_bilin` and `invert_RGB` for more information.
+    """
+    mosaic = np.right_shift(mosaic, 2)
+    rad = invert_RGB(
+        demosaic_bilin_12bit(mosaic, masks),
+        sinvs,
+        exposure
+    )
+    return rad * 4
+
+
+def demosaic_and_invert_12bit_low(mosaic, masks, sinvs, exposure):
+    """Compute radiances from a Bayer filter mosaic.
+
+    Demosaics the mosaic image and computes the radiance(s).
+    See `demosaic_bilin` and `invert_RGB` for more information.
+    """
+    mosaic = np.left_shift(mosaic, 2)
+    rad = invert_RGB(
+        demosaic_bilin_12bit(mosaic, masks),
+        sinvs,
+        exposure
+    )
+    return rad / 4
+
+
+def invert_RGB(rgbs, sinvs, exposure):
+    """Compute radiance(s) from RGB data
+
+    Parameters
+    ----------
+    rgbs : np.ndarray
+        (3, y, x) array of RGB images.
+
+    sinvs : np.ndarray
+        (peak, 3) float array of inversion coefficients for computing
+        the pseudoradiance from the RGB values.
+
+    exposure : float
+        Exposure of the RGB data, div
+
+    Returns
+    -------
+    np.ndarray
+        (peak, y, x) float array of pseudoradiance values.
+    """
+    return np.tensordot(sinvs, rgbs, axes=1) / exposure
+
+
+def demosaic_bilin_float(cfa, masks):
+    """Demosaics and computes (pseudo)radiance using given arrays.
+
+    Parameters
+    ----------
+    cfa : np.ndarray
+        (y, x) array of CFA data.
+    masks : np.ndarray
+        (3, y, x) boolean array of R, G, and B mask arrays.
+
+    Returns
+    -------
+    rgb : np.ndarray
+        (3, y, x) demosaiced RGB image
+    """
+    rgbs = cfa * masks
+    g_krnl = np.array(
+        [[0, 1, 0],
+         [1, 4, 1],
+         [0, 1, 0]], dtype=np.float64) / 4
+
+    rb_krnl = np.array(
+        [[1, 2, 1],
+         [2, 4, 2],
+         [1, 2, 1]], dtype=np.float64) / 4
+
+    R = convolve(rgbs[0, ::], rb_krnl, mode='mirror', output=np.float64)
+    G = convolve(rgbs[1, ::], g_krnl, mode='mirror', output=np.float64)
+    B = convolve(rgbs[2, ::], rb_krnl, mode='mirror', output=np.float64)
+    return np.stack([R, G, B], axis=0)
+
+
+def demosaic_bilin_12bit_scipy(cfa, masks):
+    """Demosaics and computes (pseudo)radiance using given arrays.
+
+    Parameters
+    ----------
+    cfa : np.ndarray
+        (y, x) uint16 array of natively 12-bit CFA data assumed to be
+        packed as values in the middle 12 bits of uint16 (4 to 16380).
+    masks : np.ndarray
+        (3, y, x) boolean array of R, G, and B mask arrays.
+
+    Returns
+    -------
+    rgb : np.ndarray
+        (3, y, x) demosaiced RGB image
+    """
+    rgbs = cfa * masks
+    g_krnl = np.array(
         [[0, 1, 0],
          [1, 4, 1],
          [0, 1, 0]], dtype=np.uint16)
 
-    H_RB = np.array(
+    rb_krnl = np.array(
         [[1, 2, 1],
          [2, 4, 2],
          [1, 2, 1]], dtype=np.uint16)
 
-    krnl = xr.DataArray(
-        np.stack([H_RB, H_G, H_RB], axis=-1),
-        dims=('krnl_x', 'krnl_y', c.colour_coord)
-    )
-    return krnl
+    R = convolve(rgbs[0, ::], rb_krnl, mode='mirror', output=np.uint16) >> 2
+    G = convolve(rgbs[1, ::], g_krnl, mode='mirror', output=np.uint16) >> 2
+    B = convolve(rgbs[2, ::], rb_krnl, mode='mirror', output=np.uint16) >> 2
+
+    return np.stack([R, G, B], axis=0)
 
 
-def _raw_to_rad_frame(ds, masks, g_krnl, rb_krnl, keep_variables=None):
-    cfa = ds[c.dark_corrected_cfa_data].values
-    sinvs = ds[c.sinv_data].values
-    exposure = ds[c.camera_exposure].values
-
-    ds[c.radiance_data] = (
-        (c.peak_coord, c.height_coord, c.width_coord),
-        _raw_to_rad_numpy(cfa, masks, g_krnl, rb_krnl, sinvs, exposure)
-    )
-    ds = _drop_variable(ds, c.dark_corrected_cfa_data, keep_variables)
-    ds = _drop_variable(ds, c.sinv_data, keep_variables)
-    ds = _drop_variable(ds, c.camera_exposure, keep_variables)
-    return ds
-
-
-def _raw_to_rad_numpy(cfa, masks, g_krnl, rb_krnl, sinvs, exposure):
-    """
-    cfa : array-like
-        (y, x)
-    masks : array-like
-        (colour, y, x)
-    sinvs : array-like
-        (peak, colour)
-    """
-    rgbs = cfa * masks
-    rad = np.zeros((sinvs.shape[0], *cfa.shape))
-
-    rgbs[0, ::] = convolve(rgbs[0, ::], rb_krnl, mode='mirror')
-    rgbs[1, ::] = convolve(rgbs[1, ::], g_krnl, mode='mirror')
-    rgbs[2, ::] = convolve(rgbs[2, ::], rb_krnl, mode='mirror')
-
-    rad = np.tensordot(sinvs, rgbs, axes=1) / exposure
-    return rad
-
-
-def demosaic_cdm(cfa, pattern):
-    """Perform demosaicing on a DataArray.
+def demosaic_bilin_12bit(cfa, masks):
+    """Demosaics and computes (pseudo)radiance using given arrays.
 
     Parameters
     ----------
-    cfa: xarray.DataArray
-        Array containing a stack of CFA images.
-
-    pattern: BayerPattern or str
-        Bayer pattern used to demosaic the CFA.
-
-    dm_method: str
+    cfa : np.ndarray
+        (y, x) uint16 array of natively 12-bit CFA data assumed to be
+        packed as values in the middle 12 bits of uint16 (4 to 16380).
+    masks : np.ndarray
+        (3, y, x) boolean array of R, G, and B mask arrays.
 
     Returns
     -------
-    xarray.DataArray
+    rgb : np.ndarray
+        (3, y, x) demosaiced RGB image
     """
+    res = cfa * masks
+    rgbs = np.pad(res, [(0, 0), (1, 1), (1, 1)], mode='reflect')
 
-    res = xr.apply_ufunc(
-        cdm.demosaicing_CFA_Bayer_bilinear,
-        cfa,
-        kwargs=dict(pattern=pattern),
-        input_core_dims=[(c.height_coord, c.width_coord)],
-        output_core_dims=[(c.RGB_dims)],
-        dask='parallelized',
-        output_dtypes=[np.float64],
-        output_sizes={c.colour_coord: 3}
-        )
-    res.coords[c.colour_coord] = ['R', 'G', 'B']
+    res = res << 2
+
+    # Red channel: convolution with kernel
+    # [[1, 2, 1]]
+    #  [2, 4, 2]
+    #  [1, 2, 1]]
+    res[0, ::] += rgbs[0,  :-2, 1:-1] << 1  # noqa: E203
+    res[0, ::] += rgbs[0,   2:, 1:-1] << 1  # noqa: E203
+    res[0, ::] += rgbs[0, 1:-1,  :-2] << 1  # noqa: E203
+    res[0, ::] += rgbs[0, 1:-1,   2:] << 1  # noqa: E203
+    res[0, ::] += rgbs[0,  :-2,  :-2]  # noqa: E203
+    res[0, ::] += rgbs[0,   2:,  :-2]  # noqa: E203
+    res[0, ::] += rgbs[0,  :-2,   2:]  # noqa: E203
+    res[0, ::] += rgbs[0,   2:,   2:]  # noqa: E203
+
+    # Green channel: convolution with kernel
+    # [[0, 1, 0]]
+    #  [1, 4, 1]
+    #  [0, 1, 0]]
+    res[1, ::] += rgbs[1,  :-2, 1:-1]  # noqa: E203
+    res[1, ::] += rgbs[1,   2:, 1:-1]  # noqa: E203
+    res[1, ::] += rgbs[1, 1:-1,  :-2]  # noqa: E203
+    res[1, ::] += rgbs[1, 1:-1,   2:]  # noqa: E203
+
+    # Blue channel: convolution with kernel
+    # [[1, 2, 1]]
+    #  [2, 4, 2]
+    #  [1, 2, 1]]
+    res[2, ::] += rgbs[2,  :-2, 1:-1] << 1  # noqa: E203
+    res[2, ::] += rgbs[2,   2:, 1:-1] << 1  # noqa: E203
+    res[2, ::] += rgbs[2, 1:-1,  :-2] << 1  # noqa: E203
+    res[2, ::] += rgbs[2, 1:-1,   2:] << 1  # noqa: E203
+    res[2, ::] += rgbs[2,  :-2,  :-2]  # noqa: E203
+    res[2, ::] += rgbs[2,   2:,  :-2]  # noqa: E203
+    res[2, ::] += rgbs[2,  :-2,   2:]  # noqa: E203
+    res[2, ::] += rgbs[2,   2:,   2:]  # noqa: E203
+
+    res = res >> 2
     return res
 
 
