@@ -73,7 +73,14 @@ def test_ENVI_raw_format(raw, raw_ENVI):
         assert dim in raw_ENVI.dims
     for coord in raw.coords:
         assert coord in raw_ENVI.coords
-    for variable in raw.variables:
+    variables = [
+        c.cfa_data,
+        c.dark_reference_data,
+        c.sinv_data,
+        c.camera_exposure,
+        c.camera_gain,
+        ]
+    for variable in variables:
         assert variable in raw_ENVI.variables
 
 
