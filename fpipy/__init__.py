@@ -24,5 +24,6 @@ from . import simulate
 from . import data
 from . import meta
 from . import bayer
+from . import testing
 from .io import read_hdt, read_ENVI_cfa
 from .raw import raw_to_radiance, raw_to_reflectance, radiance_to_reflectance, subtract_dark
