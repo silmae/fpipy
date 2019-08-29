@@ -135,7 +135,6 @@ def test_raw_to_radiance_keep_variables(raw, rad_computed):
         c.cfa_data,
         c.dark_corrected_cfa_data,
         c.dark_reference_data,
-        c.rgb_data,
         ]
 
     default = rad_computed
