@@ -88,8 +88,8 @@ def FPI_bayer_imager(radiance, T_fpi, exposure, T_mosaic, Q_eff, pxformat):
         # T_fpi is usually mostly zero, so optimize by indexing
         # the data arrays
         peak_idx = np.nonzero(T_gap)
-        res[a,::] = bayer_sensor(
-            T_gap[peak_idx] * radiances[::, peak_idx],
+        res[a, ::] = bayer_sensor(
+            T_gap[peak_idx] * radiance[::, peak_idx],
             exposure,
             T_mosaic[::, peak_idx],
             Q_eff[peak_idx],
