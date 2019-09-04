@@ -330,6 +330,22 @@ def create_cfa(rad, S, pattern):
     return cfa
 
 
+def fpi_transmittance(wl, l, R):
+    F = 4 * R / (1 - R)**2
+    delta = fpi_phase_difference(wl, l)
+    return 1 / (1 + F * np.sin(delta / 2) ** 2)
+
+
+def fpi_phase_difference(wl, l):
+    n = 1
+    theta = 1
+    return phase_difference(wl, n, l, theta)
+
+
+def phase_difference(wl, n, l, theta):
+    return 4 * np.pi * n * l * np.cos(theta) / wl
+
+
 def fpi_triplet(wl, l):
     """Generate a triplet of etalon peaks (wavelengths) given the lowest.
 
