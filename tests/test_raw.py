@@ -88,10 +88,10 @@ def test_all_peaks_computed(raw, rad_computed):
 
 
 def test_all_wavelengths_in_order(raw, rad_computed):
-    wls = raw.where(raw[c.wavelength_data] > 0)[c.wavelength_data].values
-    expected = np.sort(wls[~np.isnan(wls)].ravel())
+    wls = raw[c.wavelength_data].values
+    expected = np.sort(wls[np.logical_and(~np.isnan(wls), wls > 0)].ravel())
     actual = rad_computed[c.wavelength_data].values
-    assert np.all(expected == actual)
+    np.testing.assert_equal(expected, actual)
 
 
 def test_raw_to_radiance_correctness(rad_expected, rad_computed):
