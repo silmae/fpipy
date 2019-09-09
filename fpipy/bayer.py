@@ -59,8 +59,28 @@ def _bayer_masks(shape, pattern):
         channels[channel][y::2, x::2] = 1
 
     masks = np.stack(list(channels.values()), axis=0)
-    return masks, list(channels.keys())
+    return masks
 
+
+def mosaic(rgb, pattern):
+    """Create a Bayer filter mosaic from an RGB image.
+
+    Parameters
+    ----------
+    rgb : xr.DataArray
+        (3, y, x) RGB image array.
+
+    pattern: BayerPattern or str
+        Bayer pattern for the mosaic.
+
+    Returns
+    -------
+    mosaic : np.ndarray
+        (y, x) mosaic image.
+    """
+    rgb_masks = masks(rgb.shape[1:], pattern)
+    split = rgb_masks * rgb
+    return np.sum(split, axis=0)
 
 def inversion_method(pixelformat):
     """Select an efficient radiance inversion method based on bit format.

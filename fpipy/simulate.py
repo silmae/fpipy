@@ -4,7 +4,6 @@
 """
 
 import numpy as np
-from .bayer import _bayer_masks
 
 
 def fpi_triplet(wl, l):
@@ -144,24 +143,3 @@ def etalon_gap(wl, fsr, ng, theta):
     """
 
     return wl * (wl - fsr) / (2 * ng * fsr * np.cos(theta))
-
-
-def mosaic(rgb, pattern):
-    """Create a Bayer filter mosaic from an RGB image.
-
-    Parameters
-    ----------
-    rgb : xr.DataArray
-        (y, x, 3) RGB image array.
-
-    pattern: BayerPattern or str
-        Bayer pattern for the mosaic.
-
-    Returns
-    -------
-    mosaic : np.ndarray
-        (y, x) mosaic image.
-    """
-    masks, _ = _bayer_masks(rgb.shape[:-1], pattern)
-    split = masks * np.moveaxis(rgb, -1, 0)
-    return np.sum(split, axis=0)
