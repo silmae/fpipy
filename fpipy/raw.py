@@ -21,7 +21,7 @@ Calculating radiances from raw data and plotting them can be done as follows::
 import xarray as xr
 import numpy as np
 from . import conventions as c
-from .bayer import bayer_masks, inversion_method
+from .bayer import rgb_masks_for, inversion_method
 
 
 def raw_to_reflectance(raw, whiteraw, keep_variables=None):
@@ -129,7 +129,7 @@ def raw_to_radiance(ds, keep_variables=None):
     ds = ds.copy()
     ds = subtract_dark(ds, keep_variables)
 
-    masks = bayer_masks(ds)
+    masks = rgb_masks_for(ds)
 
     pxformat = ds.get('PixelFormat', None)
     if pxformat is not None:

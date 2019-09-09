@@ -21,7 +21,7 @@ def find_bayer_pattern(ds):
     return pattern
 
 
-def bayer_masks(raw):
+def rgb_masks_for(raw):
     """Create Bayer filter mosaic colour separation masks.
 
     Parameters
@@ -37,12 +37,12 @@ def bayer_masks(raw):
     shape = (raw[c.height_coord].size, raw[c.width_coord].size)
     pattern = np.unique(find_bayer_pattern(raw)).item()
 
-    masks, coords = _bayer_masks(shape, pattern)
+    masks = rgb_masks(shape, pattern)
     res = xr.DataArray(
         masks,
         dims=(c.colour_coord, c.height_coord, c.width_coord),
         coords={
-            c.colour_coord: coords,
+            c.colour_coord: ['R', 'G', 'B'],
             c.height_coord: raw[c.height_coord],
             c.width_coord: raw[c.width_coord],
             }
@@ -50,7 +50,28 @@ def bayer_masks(raw):
     return res
 
 
-def _bayer_masks(shape, pattern):
+def rgb_masks_like(array, pattern):
+    """Return RGB mask arrays matching the shape of the given array."""
+    return rgb_masks(array.shape, pattern)
+
+
+def rgb_masks(shape, pattern):
+    """Return mask arrays for separating the R, G and B pixels
+
+    Parameters
+    ----------
+    shape : pair of int
+        Shape of a single mask.
+
+    pattern : BayerPattern or str
+        The Bayer pattern of the masks.
+
+    Returns
+    -------
+    masks : np.ndarray
+        (3, shape[0], shape[1]) array of masks, ordered as R, G, B.
+    """
+
     pattern = BayerPattern.get(pattern).name
 
     channels = dict((channel, np.zeros(shape, dtype=np.bool))
@@ -78,9 +99,10 @@ def mosaic(rgb, pattern):
     mosaic : np.ndarray
         (y, x) mosaic image.
     """
-    rgb_masks = masks(rgb.shape[1:], pattern)
-    split = rgb_masks * rgb
+    masks = rgb_masks(rgb.shape[1:], pattern)
+    split = masks * rgb
     return np.sum(split, axis=0)
+
 
 def inversion_method(pixelformat):
     """Select an efficient radiance inversion method based on bit format.

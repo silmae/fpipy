@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 from . import conventions as c
-from .bayer import BayerPattern, _bayer_masks
+from .bayer import BayerPattern, rgb_masks
 
 
 def raw(cfa, dark, pattern, exposure, gain, metas, wl_range, pxformat):
@@ -45,7 +45,7 @@ def cfa(size, pattern, R, G, B):
     b, y, x = size
 
     pattern = BayerPattern.get(pattern).name
-    masks, _ = _bayer_masks((y, x), pattern)
+    masks = rgb_masks((y, x), pattern)
     cfa = np.zeros(size, dtype=np.uint16)
     cfa[:, masks[0]] = R
     cfa[:, masks[1]] = G
