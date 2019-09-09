@@ -100,7 +100,7 @@ def mosaic(rgb, pattern):
         (y, x) mosaic image.
     """
     masks = rgb_masks(rgb.shape[1:], pattern)
-    res = np.zeros_like(rgb[0,::])
+    res = np.zeros_like(rgb[0, ::])
     res[masks[0]] = rgb[0][masks[0]]
     res[masks[1]] = rgb[1][masks[1]]
     res[masks[2]] = rgb[2][masks[2]]
@@ -134,7 +134,7 @@ def demosaic_and_invert_float(mosaic, masks, sinvs, exposure):
     See `demosaic_bilin` and `invert_RGB` for more information.
     """
     rad = invert_RGB(
-        demosaic_bilin_float(mosaic, masks),
+        demosaic_bilin_float_scipy(mosaic, masks),
         sinvs,
         exposure
     )
@@ -194,7 +194,7 @@ def invert_RGB(rgbs, sinvs, exposure):
     return np.tensordot(sinvs, rgbs, axes=1) / exposure
 
 
-def demosaic_bilin_float(cfa, masks):
+def demosaic_bilin_float_scipy(cfa, masks):
     """Demosaics and computes (pseudo)radiance using given arrays.
 
     Parameters
@@ -276,6 +276,7 @@ def demosaic_bilin_12bit(cfa, masks):
     rgb : np.ndarray
         (3, y, x) demosaiced RGB image
     """
+
     res = cfa * masks
     rgbs = np.pad(res, [(0, 0), (1, 1), (1, 1)], mode='reflect')
 
