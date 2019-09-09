@@ -5,6 +5,7 @@ dependencies:
   - numpy
   - xarray
   - rasterio
+  - scipy
   - dask
   - flake8
   - pytest

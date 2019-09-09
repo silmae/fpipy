@@ -14,6 +14,7 @@ with open('CHANGELOG.rst') as history_file:
 requirements = [
     'numpy',
     'xarray',
+    'scipy',
     'configparser;python_version<"3.4"',
 ]
 
