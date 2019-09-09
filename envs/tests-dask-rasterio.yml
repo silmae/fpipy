@@ -8,3 +8,4 @@ dependencies:
   - dask
   - flake8
   - pytest
+  - hypothesis

@@ -24,6 +24,7 @@ setup_requirements = [
 test_requirements = [
     'pytest',
     'flake8',
+    'hypothesis',
 ]
 
 extra_requirements = {

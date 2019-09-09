@@ -6,3 +6,4 @@ dependencies:
   - xarray
   - flake8
   - pytest
+  - hypothesis
