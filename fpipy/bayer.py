@@ -100,8 +100,11 @@ def mosaic(rgb, pattern):
         (y, x) mosaic image.
     """
     masks = rgb_masks(rgb.shape[1:], pattern)
-    split = masks * rgb
-    return np.sum(split, axis=0)
+    res = np.zeros_like(rgb[0,::])
+    res[masks[0]] = rgb[0][masks[0]]
+    res[masks[1]] = rgb[1][masks[1]]
+    res[masks[2]] = rgb[2][masks[2]]
+    return res
 
 
 def inversion_method(pixelformat):
