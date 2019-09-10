@@ -101,7 +101,7 @@ def radiance_to_reflectance(radiance, white, keep_variables=None):
     return _drop_variable(res, c.radiance_data, keep_variables)
 
 
-def raw_to_radiance(ds, keep_variables=None):
+def raw_to_radiance(ds, keep_variables=None, output_dtype=np.float32):
     """Performs demosaicing and computes radiance from RGB values.
 
     Parameters
@@ -134,11 +134,15 @@ def raw_to_radiance(ds, keep_variables=None):
     pxformat = ds.get('PixelFormat', None)
     if pxformat is not None:
         pxformat = pxformat.item()
-    inv_method = inversion_method(pxformat)
+
+    method = inversion_method(pxformat)
+
+    def inv_method(*args, **kwargs):
+        return method(*args, **kwargs).astype(output_dtype)
 
     ds = ds.groupby(c.image_index).apply(
             _raw_to_rad_frame,
-            (masks, inv_method, keep_variables)
+            (masks, inv_method, output_dtype, keep_variables)
             )
 
     ds = ds.stack(
@@ -169,7 +173,7 @@ def raw_to_radiance(ds, keep_variables=None):
     return ds
 
 
-def _raw_to_rad_frame(ds, masks, method, keep_variables):
+def _raw_to_rad_frame(ds, masks, method, output_dtype, keep_variables):
 
     cfa = ds[c.dark_corrected_cfa_data]
     sinvs = ds[c.sinv_data]
@@ -186,7 +190,7 @@ def _raw_to_rad_frame(ds, masks, method, keep_variables):
             ],
         output_core_dims=[['peak', 'y', 'x']],
         dask='parallelized',
-        output_dtypes=[np.float64]
+        output_dtypes=[output_dtype]
     )
 
     return ds
