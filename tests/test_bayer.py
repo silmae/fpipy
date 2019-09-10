@@ -10,7 +10,8 @@ from fpipy.bayer import (
     demosaic_bilin_12bit_scipy,
     demosaic_bilin_float_scipy,
     rgb_masks,
-    mosaic
+    mosaic,
+    invert_RGB,
     )
 from hypothesis import given
 import hypothesis.strategies as st
@@ -57,6 +58,21 @@ _cfa_images_float = npst.arrays(
     dtype=npst.floating_dtypes(),
     shape=npst.array_shapes(min_dims=2, max_dims=2, min_side=2),
 )
+
+_sinvs = npst.arrays(
+    dtype=npst.floating_dtypes(),
+    shape=st.tuples(st.integers(1, 3), st.just(3)))
+
+
+@given(
+    _rgb_images_uint,
+    _sinvs,
+    st.floats())
+def test_rgb_inversion_shape(rgb, sinvs, exp):
+    result = invert_RGB(rgb, sinvs, exp)
+    np.testing.assert_equal(
+        result.shape,
+        (sinvs.shape[0], rgb.shape[1], rgb.shape[2]))
 
 
 @given(
