@@ -15,6 +15,7 @@ def gen_data(size, pattern):
             gain=1,
             metas=fpt.metadata(size, (200, 1200)),
             wl_range=(200, 1200),
+            pxformat='BayerRG12',
             )
 
     raw.coords['exposure'] = 2.0
