@@ -331,18 +331,66 @@ def create_cfa(rad, S, pattern):
 
 
 def fpi_transmittance(wl, l, R):
+    """Transmittance of the FPI at given wavelength, gap and mirror reflectance
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength in chosen units (matching gap length)
+    l : np.float64
+        Gap length in chosen units (matching wavelength)
+    R : np.float64
+        Reflectance of the FPI mirrors
+
+    Returns
+    -------
+    np.float64
+        Reflectance of the Fabry-Perot interferometer
+    """
     F = 4 * R / (1 - R)**2
     delta = fpi_phase_difference(wl, l)
     return 1 / (1 + F * np.sin(delta / 2) ** 2)
 
 
 def fpi_phase_difference(wl, l):
+    """Phase difference between pairs of transmitted beams in the FPI
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength of the light in chosen units (matching gap length)
+    l : np.float64
+        Gap length in chosen units (matching wavelength)
+
+    Returns
+    -------
+    np.float64
+        Phase difference in radians
+    """
     n = 1
     theta = 1
     return phase_difference(wl, n, l, theta)
 
 
 def phase_difference(wl, n, l, theta):
+    """Phase difference between pairs of transmitted beams in the etalon
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength of the light in chosen units (matching gap length)
+    n : np.float64
+        Refractive index of the mirrors
+    l : np.float64
+        Gap length in chosen units (matching wavelength)
+    theta : np.float64
+        Angle of the beam entering the etalon in radians
+
+    Returns
+    -------
+    np.float64
+        Phase difference in radians
+    """
     return 4 * np.pi * n * l * np.cos(theta) / wl
 
 
