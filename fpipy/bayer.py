@@ -147,7 +147,7 @@ def demosaic_and_invert_12bit_high(mosaic, masks, sinvs, exposure):
     Demosaics the mosaic image and computes the radiance(s).
     See `demosaic_bilin` and `invert_RGB` for more information.
     """
-    mosaic = np.right_shift(mosaic, 2)
+    np.right_shift(mosaic, 2, out=mosaic)
     rad = invert_RGB(
         demosaic_bilin_12bit(mosaic, masks),
         sinvs,
@@ -162,7 +162,7 @@ def demosaic_and_invert_12bit_low(mosaic, masks, sinvs, exposure):
     Demosaics the mosaic image and computes the radiance(s).
     See `demosaic_bilin` and `invert_RGB` for more information.
     """
-    mosaic = np.left_shift(mosaic, 2)
+    np.left_shift(mosaic, 2, out=mosaic)
     rad = invert_RGB(
         demosaic_bilin_12bit(mosaic, masks),
         sinvs,
@@ -280,7 +280,7 @@ def demosaic_bilin_12bit(cfa, masks):
     res = cfa * masks
     rgbs = np.pad(res, [(0, 0), (1, 1), (1, 1)], mode='reflect')
 
-    res = res << 2
+    np.left_shift(res, 2, out=res)
 
     # Red channel: convolution with kernel
     # [[1, 2, 1]]
@@ -317,7 +317,7 @@ def demosaic_bilin_12bit(cfa, masks):
     res[2, ::] += rgbs[2,  :-2,   2:]  # noqa: E203
     res[2, ::] += rgbs[2,   2:,   2:]  # noqa: E203
 
-    res = res >> 2
+    np.right_shift(res, 2, out=res)
     return res
 
 
