@@ -57,7 +57,7 @@ def bench_dask(raw, processes):
 
 if __name__ == '__main__':
 
-    size = (16, 1080, 1920)
+    size = (64, 1080, 1920)
     pattern = 'RGGB'
 
     raw = gen_data(size, pattern)
