@@ -104,8 +104,8 @@ def rad(cfa, dark_level, exposure, metas, wl_range):
 
     # Purposefully computed by hand
     # Currently only works for the dark levels 0, 1
-    values = np.array([5, 2, 1, 7, 6, 3], dtype=np.float64)
-    dark_rad = dark_level * np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
+    values = np.array([5, 2, 1, 7, 6, 3], dtype=np.uint16)
+    dark_rad = dark_level * np.array([1, 1, 1, 2, 2, 2], dtype=np.uint16)
     values = values - dark_rad
 
     values = values / exposure
