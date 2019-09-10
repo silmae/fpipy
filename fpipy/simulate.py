@@ -347,9 +347,25 @@ def fpi_transmittance(wl, l, R):
     np.float64
         Reflectance of the Fabry-Perot interferometer
     """
-    F = 4 * R / (1 - R)**2
+    F = finesse_coefficient(R)
     delta = fpi_phase_difference(wl, l)
     return 1 / (1 + F * np.sin(delta / 2) ** 2)
+
+
+def finesse_coefficient(R):
+    """Finesse coefficient of the etalon
+
+    Parameters
+    ----------
+    R : np.float64
+        Reflectance of the etalon mirrors
+
+    Returns
+    -------
+    np.float64
+        Finesse coefficient of the etalon
+    """
+    return 4 * R / (1 - R)**2
 
 
 def fpi_phase_difference(wl, l):
