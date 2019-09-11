@@ -73,16 +73,22 @@ _sinvs = npst.arrays(
     _sinvs,
     st.floats(),
     st.sampled_from(BayerPattern))
-def test_invert_and_demosaic_consistent(cfa, sinvs, exp, pattern):
+def test_invert_and_demosaics_agree(cfa, sinvs, exp, pattern):
     masks = rgb_masks_like(cfa, pattern)
     cfa_high = cfa << 2
     cfa_low = cfa >> 2
-    result_low = demosaic_and_invert_12bit_low(cfa_low, masks, sinvs, exp)
-    result_high = demosaic_and_invert_12bit_high(cfa_high, masks, sinvs, exp)
-    result_float = demosaic_and_invert_float(cfa, masks, sinvs, exp)
-    np.testing.assert_equal(result_high, result_low * 16)
+
+    low = demosaic_and_invert_12bit_low(cfa_low, masks, sinvs, exp)
+    high = demosaic_and_invert_12bit_high(cfa_high, masks, sinvs, exp)
+    low_float = demosaic_and_invert_float(cfa_low, masks, sinvs, exp)
+    high_float = demosaic_and_invert_float(cfa_high, masks, sinvs, exp)
+
     np.testing.assert_allclose(
-        result_high, result_float * 4, rtol=1e-6, atol=0)
+        high, low * 16, atol=1e-14)
+    np.testing.assert_allclose(
+        low, low_float, atol=1e-14)
+    np.testing.assert_allclose(
+        high, high_float, atol=1e-14)
 
 
 @given(
@@ -129,6 +135,20 @@ def test_mosaic_preserves_dtype(rgb, pattern):
 def test_mosaic_shape(rgb, pattern):
     result = mosaic(rgb, pattern)
     np.testing.assert_equal(result.shape, rgb.shape[1:])
+
+
+@given(
+    cfa=_cfa_images_12bit_centered,
+    pattern=st.sampled_from(BayerPattern),
+    )
+def test_demosaic_methods_agree_12bit(cfa, pattern):
+    masks = rgb_masks_like(cfa, pattern)
+    demosaic_int = demosaic_bilin_12bit(cfa, masks)
+    demosaic_int_scipy = demosaic_bilin_12bit_scipy(cfa, masks)
+    demosaic_float = demosaic_bilin_float_scipy(cfa, masks)
+
+    np.testing.assert_equal(demosaic_int, demosaic_int_scipy)
+    np.testing.assert_equal(demosaic_int, demosaic_float)
 
 
 @given(
