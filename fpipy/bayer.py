@@ -74,12 +74,18 @@ def rgb_masks(shape, pattern):
 
     pattern = BayerPattern.get(pattern).name
 
-    channels = dict((channel, np.zeros(shape, dtype=np.bool))
-                    for channel in 'RGB')
-    for channel, (y, x) in zip(pattern, [(0, 0), (0, 1), (1, 0), (1, 1)]):
-        channels[channel][y::2, x::2] = 1
+    # Map pattern letters to corresponding layer indices of the final array
+    layers = {'R': 0, 'G': 1, 'B': 2}
+    masks = np.zeros((3, *shape), dtype=np.bool)
 
-    masks = np.stack(list(channels.values()), axis=0)
+    # Assign shifts based on the ordering in the pattern
+    idxs = [(layers[l], y, x)
+            for l, (y, x) in zip(pattern, [(0, 0), (0, 1), (1, 0), (1, 1)])]
+
+    # Assign True to the correct places
+    for l, x, y in idxs:
+        masks[l, y::2, x::2] = 1
+
     return masks
 
 
