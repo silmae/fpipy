@@ -131,7 +131,7 @@ def demosaic_and_invert_float(mosaic, masks, sinvs, exposure):
     """Compute radiances from a Bayer filter mosaic.
 
     Demosaics the mosaic image and computes the radiance(s).
-    See `demosaic_bilin` and `invert_RGB` for more information.
+    See `demosaic_bilin_float_scipy` and `invert_RGB` for more information.
     """
     rad = invert_RGB(
         demosaic_bilin_float_scipy(mosaic, masks),
@@ -142,10 +142,14 @@ def demosaic_and_invert_float(mosaic, masks, sinvs, exposure):
 
 
 def demosaic_and_invert_12bit_high(mosaic, masks, sinvs, exposure):
-    """Compute radiances from a Bayer filter mosaic.
+    """Compute radiances from a Bayer filter mosaic of high 12-bit values.
 
-    Demosaics the mosaic image and computes the radiance(s).
-    See `demosaic_bilin` and `invert_RGB` for more information.
+    This method assumes that the mosaic contains 12-bit data stored as uint16
+    in the highest 12 bits. Demosaicing is done using a bitshifted array
+    for memory efficiency, but after the inversion the result is multiplied
+    to match the non-bitshifted computation.
+
+    See `demosaic_bilin_12bit` and `invert_RGB` for more information.
     """
     np.right_shift(mosaic, 2, out=mosaic)
     rad = invert_RGB(
@@ -159,8 +163,12 @@ def demosaic_and_invert_12bit_high(mosaic, masks, sinvs, exposure):
 def demosaic_and_invert_12bit_low(mosaic, masks, sinvs, exposure):
     """Compute radiances from a Bayer filter mosaic.
 
-    Demosaics the mosaic image and computes the radiance(s).
-    See `demosaic_bilin` and `invert_RGB` for more information.
+    This method assumes that the mosaic contains 12-bit data stored as uint16
+    in the lowest 12 bits. Demosaicing is done using a bitshifted array
+    for memory efficiency, but after the inversion the result is divided
+    to match the non-bitshifted computation.
+
+    See `demosaic_bilin_12bit` and `invert_RGB` for more information.
     """
     np.left_shift(mosaic, 2, out=mosaic)
     rad = invert_RGB(
