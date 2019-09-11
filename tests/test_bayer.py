@@ -9,7 +9,11 @@ from fpipy.bayer import (
     demosaic_bilin_12bit,
     demosaic_bilin_12bit_scipy,
     demosaic_bilin_float_scipy,
+    demosaic_and_invert_12bit_low,
+    demosaic_and_invert_12bit_high,
+    demosaic_and_invert_float,
     rgb_masks,
+    rgb_masks_like,
     mosaic,
     invert_RGB,
     )
@@ -60,8 +64,25 @@ _cfa_images_float = npst.arrays(
 )
 
 _sinvs = npst.arrays(
-    dtype=npst.floating_dtypes(),
+    dtype=npst.floating_dtypes(sizes=(64,)),
     shape=st.tuples(st.integers(1, 3), st.just(3)))
+
+
+@given(
+    _cfa_images_12bit_centered,
+    _sinvs,
+    st.floats(),
+    st.sampled_from(BayerPattern))
+def test_invert_and_demosaic_consistent(cfa, sinvs, exp, pattern):
+    masks = rgb_masks_like(cfa, pattern)
+    cfa_high = cfa << 2
+    cfa_low = cfa >> 2
+    result_low = demosaic_and_invert_12bit_low(cfa_low, masks, sinvs, exp)
+    result_high = demosaic_and_invert_12bit_high(cfa_high, masks, sinvs, exp)
+    result_float = demosaic_and_invert_float(cfa, masks, sinvs, exp)
+    np.testing.assert_equal(result_high, result_low * 16)
+    np.testing.assert_allclose(
+        result_high, result_float * 4, rtol=1e-6, atol=0)
 
 
 @given(
@@ -115,7 +136,7 @@ def test_mosaic_shape(rgb, pattern):
     pattern=st.sampled_from(BayerPattern),
     )
 def test_demosaic_mosaic_is_id_12bit(demosaic_method, cfa, pattern):
-    masks = rgb_masks(cfa.shape, pattern)
+    masks = rgb_masks_like(cfa, pattern)
     interp_and_mosaic = mosaic(demosaic_method(cfa, masks), pattern)
     np.testing.assert_equal(cfa, interp_and_mosaic)
 
@@ -125,7 +146,7 @@ def test_demosaic_mosaic_is_id_12bit(demosaic_method, cfa, pattern):
     pattern=st.sampled_from(BayerPattern),
     )
 def test_demosaic_is_bounded(demosaic_method, cfa, pattern):
-    masks = rgb_masks(cfa.shape, pattern)
+    masks = rgb_masks_like(cfa, pattern)
     interpolant = demosaic_method(cfa, masks)
     for orig, interp in zip(cfa * masks, interpolant):
         assert np.max(orig) >= np.max(interp)
