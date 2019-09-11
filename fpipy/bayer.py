@@ -151,7 +151,7 @@ def demosaic_and_invert_12bit_high(mosaic, masks, sinvs, exposure):
 
     See `demosaic_bilin_12bit` and `invert_RGB` for more information.
     """
-    np.right_shift(mosaic, 2, out=mosaic)
+    mosaic = np.right_shift(mosaic, 2)
     rad = invert_RGB(
         demosaic_bilin_12bit(mosaic, masks),
         sinvs,
@@ -170,7 +170,7 @@ def demosaic_and_invert_12bit_low(mosaic, masks, sinvs, exposure):
 
     See `demosaic_bilin_12bit` and `invert_RGB` for more information.
     """
-    np.left_shift(mosaic, 2, out=mosaic)
+    mosaic = np.left_shift(mosaic, 2)
     rad = invert_RGB(
         demosaic_bilin_12bit(mosaic, masks),
         sinvs,
