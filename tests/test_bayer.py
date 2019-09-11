@@ -102,6 +102,15 @@ def test_mosaic_preserves_dtype(rgb, pattern):
 
 
 @given(
+    _rgb_images_uint,
+    st.sampled_from(BayerPattern),
+    )
+def test_mosaic_shape(rgb, pattern):
+    result = mosaic(rgb, pattern)
+    np.testing.assert_equal(result.shape, rgb.shape[1:])
+
+
+@given(
     cfa=_cfa_images_12bit_centered,
     pattern=st.sampled_from(BayerPattern),
     )
