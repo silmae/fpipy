@@ -31,7 +31,7 @@ def read_calibration(calibfile, wavelength_unit='nm'):
 
     """
 
-    df = pd.read_csv(calibfile, delimiter='\t', index_col='index')
+    df = pd.read_csv(calibfile, delim_whitespace=True, index_col='index')
 
     ds = xr.Dataset()
     ds.coords[c.image_index] = xr.DataArray(df.index, dims=(c.image_index))
