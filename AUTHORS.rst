@@ -18,3 +18,4 @@ Contributors
 
 * Severi Jääskeläinen <severi.a.jaaskelainen@student.jyu.fi>
 * Samuli Rahkonen <samuli.rahkonen@jyu.fi>
+* Leevi Annala <leevi.a.annala@jyu.fi>
