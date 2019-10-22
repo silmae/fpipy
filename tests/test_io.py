@@ -13,7 +13,7 @@ def test_read_calibration_tabs():
     cube = read_calibration(
         "./fpipy/data/house_calib_seq.txt"
         )
-    assert cube == cube_expected
+    xr.testing.assert_equal(cube, cube_expected)
 
 
 def test_read_calibration_mixed_whitespace():
@@ -27,4 +27,4 @@ def test_read_calibration_mixed_whitespace():
     cube = read_calibration(
         "./fpipy/data/house_calib_seq_mixed_whitespace.txt"
         )
-    assert cube == cube_expected
+    xr.testing.assert_equal(cube, cube_expected)
