@@ -72,7 +72,8 @@ _sinvs = npst.arrays(
     _cfa_images_12bit_centered,
     _sinvs,
     st.floats(),
-    st.sampled_from(BayerPattern))
+    st.sampled_from(BayerPattern)
+    )
 def test_invert_and_demosaics_agree(cfa, sinvs, exp, pattern):
     masks = rgb_masks_like(cfa, pattern)
     cfa_high = cfa << 2
@@ -94,7 +95,8 @@ def test_invert_and_demosaics_agree(cfa, sinvs, exp, pattern):
 @given(
     _rgb_images_uint,
     _sinvs,
-    st.floats())
+    st.floats()
+    )
 def test_rgb_inversion_shape(rgb, sinvs, exp):
     result = invert_RGB(rgb, sinvs, exp)
     np.testing.assert_equal(
@@ -104,7 +106,8 @@ def test_rgb_inversion_shape(rgb, sinvs, exp):
 
 @given(
     npst.array_shapes(min_dims=2, max_dims=2),
-    st.sampled_from(BayerPattern))
+    st.sampled_from(BayerPattern)
+    )
 def test_masks_shape(shape, pattern):
     masks = rgb_masks(shape, pattern)
     np.testing.assert_equal(masks.shape, [3, shape[0], shape[1]])
@@ -112,7 +115,8 @@ def test_masks_shape(shape, pattern):
 
 @given(
     npst.array_shapes(min_dims=2, max_dims=2),
-    st.sampled_from(BayerPattern))
+    st.sampled_from(BayerPattern)
+    )
 def test_masks_no_overlap(shape, pattern):
     masks = rgb_masks(shape, pattern)
     sum_of_masks = np.sum(masks, axis=0)
