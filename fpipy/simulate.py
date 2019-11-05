@@ -329,6 +329,34 @@ def create_cfa(rad, S, pattern):
     return cfa
 
 
+def fpi_transmittance_approx(wl, l, R):
+    """Transmittance of the FPI at given wavelength, gap and mirror reflectance
+
+    Uses the approximation given by VTT in Saari et al., 2009,
+    with :math:`T = 1 - R` and :math:`\\theta = 0`.
+
+    .. math::
+
+        \\frac{(1 - R)}{1 + R^2 - 2 R
+        \\cos\\left(\\frac{4 \\pi d}{\\lambda}\\right)}
+
+    Parameters
+    ----------
+    wl : np.float64
+        Wavelength in chosen units (matching gap length)
+    l : np.float64
+        Gap length in chosen units (matching wavelength)
+    R : np.float64
+        Reflectance of the FPI mirrors
+
+    Returns
+    -------
+    np.float64
+        Transmittance of the Fabry-Perot interferometer
+    """
+    return (1 - R) / (1 + R**2 - 2 * R * np.cos(4 * np.pi * l / wl))
+
+
 def fpi_transmittance(wl, l, R):
     """Transmittance of the FPI at given wavelength, gap and mirror reflectance
 
@@ -344,7 +372,7 @@ def fpi_transmittance(wl, l, R):
     Returns
     -------
     np.float64
-        Reflectance of the Fabry-Perot interferometer
+        Transmittance of the Fabry-Perot interferometer
     """
     F = finesse_coefficient(R)
     delta = fpi_phase_difference(wl, l)
