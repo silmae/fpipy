@@ -198,14 +198,14 @@ def invert_RGB(rgbs, sinvs, exposure):
         the pseudoradiance from the RGB values.
 
     exposure : float
-        Exposure of the RGB data, div
+        Exposure of the RGB data
 
     Returns
     -------
     np.ndarray
         (peak, y, x) float array of pseudoradiance values.
     """
-    return np.tensordot(sinvs, rgbs, axes=1) / exposure
+    return np.tensordot(sinvs / exposure, rgbs, axes=1)
 
 
 def demosaic_bilin_float_scipy(cfa, masks):
